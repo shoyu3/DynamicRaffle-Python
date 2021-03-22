@@ -24,7 +24,7 @@ import base64
 from iconwin import img
 #打包成exe所需的库
 
-version='v0.3'
+version='1.0.0'
 updatetime='2021-03-22'
 
 def setIcon():
@@ -34,63 +34,6 @@ def setIcon():
     tmp.close()
     window.iconbitmap("tmp.ico") #设置图标
     os.remove("tmp.ico")           #删除临时图标
-
-window = Tk()#初始化一个窗口
-window.title('B站动态抽奖工具 Python GUI版 '+version+' '+updatetime+' By: 芍芋')#标题
-window.configure(bg='white')#背景颜色
-#window.geometry("820x300")
-
-#窗口居中实现
-width = 690 #720 Linux
-heigh = 300 #380 Linux
-screenwidth = window.winfo_screenwidth()
-screenheight = window.winfo_screenheight()-50
-window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
-window.resizable(0,0)#设置禁止调整窗口大小
-#定义图标
-try:
-    window.iconbitmap('icon.ico')
-except:
-    try:
-        setIcon()
-    except:
-        pass
-#定义文本
-lbl1 = Label(window, text="动态链接/ID")
-lbl1.place(x=10, y=10)
-lbl1.configure(bg='white')
-txt = Entry(window, width=40, relief="solid")
-txt.place(x=10, y=35)
-#txt.focus()
-lbl2 = Label(window, text="抽奖条件")
-lbl2.place(x=10, y=70)
-lbl2.configure(bg='white')
-#定义复选框
-chk1_state = BooleanVar()
-chk1_state.set(False) # Set check state
-chk1 = Checkbutton(window, text="转发", var=chk1_state)
-chk1.place(x=10, y=90)
-chk1.configure(bg='white')
-chk2_state = BooleanVar()
-chk2_state.set(False) # Set check state
-chk2 = Checkbutton(window, text="评论", var=chk2_state)
-chk2.place(x=90, y=90)
-chk2.configure(bg='white')
-chk3_state = BooleanVar()
-chk3_state.set(False) # Set check state
-chk3 = Checkbutton(window, text="点赞", var=chk3_state)
-chk3.place(x=170, y=90)
-chk3.configure(bg='white')
-chk4_state = BooleanVar()
-chk4_state.set(False) # Set check state
-chk4 = Checkbutton(window, text="关注", var=chk4_state)
-chk4.place(x=250, y=90)
-chk4.configure(bg='white')
-chk5_state = BooleanVar()
-chk5_state.set(False) # Set check state
-chk5 = Checkbutton(window, text="保存抽奖记录", var=chk5_state)
-chk5.place(x=10, y=210)
-chk5.configure(bg='white')
 
 def nowtm():
     #记录列表输出当前时间
@@ -175,7 +118,6 @@ def getZF(dyn_id):
     data_json = json.loads(data.text)
     total_num = data_json['data']['total']
     info['total'] = total_num
-    #printp("总转发人数：" + str(total_num))
 
     # 获取全部数据
     uidall=[]
@@ -290,7 +232,6 @@ def getDZ(dyid):
                 times2=times2+1
         times=times+1
         time.sleep(0.3)
-    #printp(userlist_1)
     userlist_1.sort()
     try:
         userlist_1.remove(myuid)
@@ -298,45 +239,6 @@ def getDZ(dyid):
         pass
     printp('完成，共有 '+str(len(userlist_1))+' 位，已存至数组中')
     return list(userlist_1)
-'''
-def getGZ(cookie):
-    global errortime
-    printp('尝试获取完整粉丝列表……')
-    header={
-    "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
-    "Cookie":cookie,
-    }
-    r=gethtml(gzlisturl(1),header)
-    errortime=1
-    userlist_dict=json.loads(r)
-    jdata=userlist_dict['data']
-    jlist=jdata['list']
-    totalfans=jdata.get('total')
-    math2=math.ceil(jdata.get('total')/50)*50-totalfans
-    pages=math.ceil(totalfans/50)
-    times=1
-    errortime=1
-    userlist_1=[]
-    while times < pages+1:
-        errortime=times
-        r=gethtml(gzlisturl(times), header)
-        userlist_dict=json.loads(r)
-        jdata=userlist_dict['data']
-        jlist=jdata['list']
-        times2=0
-        if times != pages:
-            while times2<50:
-                userlist_1.append(jlist[times2].get('mid'))
-                times2=times2+1
-        else:
-            while times2<50-math2:
-                userlist_1.append(jlist[times2].get('mid'))
-                times2=times2+1
-        times=times+1
-        time.sleep(0.3)
-    userlist_1.sort()
-    printp('完成，共有 '+str(len(userlist_1))+' 位，已存至数组中')
-    return list(userlist_1)'''
 
 def getname(users):
     #获取用户名
@@ -356,12 +258,8 @@ def getname(users):
             #print(res.text)
             mid=(users[times])
             uname='[获取失败]'
-        #if checkGZ(mid):
         printp(str(times+1)+' '+uname+' (UID:'+str(mid)+')')
         times=times+1
-        #else:
-        #    printp(uname+' (UID:'+str(mid)+') 未关注，作废')
-        #    times=times-1
 
 def checkGZ(mid):
     if TGZ:
@@ -395,7 +293,6 @@ def checkCJH(mid,condition):
         resback=json.loads(res.text)
         if resback['code']==0:
             rinfo=resback.get('data')
-            #print(resback)
             if resback['code']!=0:
                 printp('检测抽奖号'+str(mid)+'时出错，返回值为:'+str(resback['code']))
                 return True
@@ -456,8 +353,6 @@ def clicked():
         tkinter.messagebox.showwarning("提示", '请输入动态链接/ID！')
         return False
     try:
-        #print()
-        #typ=int(chk1_state+chk2_state*2+chk3_state*4+chk4_state*8)
         dyid=linktodyid(txt.get())
         dyid=int(dyid)
     except:
@@ -562,7 +457,7 @@ def clicked():
     else:'''
     dyid=str(dyid)
     notime=False
-    printp('正在获取动态详情……')#动态ID:',dyid)
+    printp('正在获取动态详情……')
     try:
         header={
         "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
@@ -640,40 +535,25 @@ def clicked():
     notime=False
     if TZF:
         LBZF=getZF(dyid)
-        #printp(LBZF)
         if len(LBALL)!=0:
             LBALL=set(LBALL)&set(LBZF)
         else:
             LBALL=set(LBZF)
-    #printp('1--'+str(len(LBZF)))
     bar['value']=50
     if TPL:
         LBPL=getPL(dyid)
-        #printp(LBPL)
         if len(LBALL)!=0:
             LBALL=set(LBALL)&set(LBPL)
         else:
             LBALL=set(LBPL)
-    #printp('2--'+str(LBALL))
     bar['value']=60
     if TDZ:
         LBDZ=getDZ(dyid)
-        #printp(LBDZ)
         if len(LBALL)!=0:
             LBALL=set(LBALL)&set(LBDZ)
         else:
             LBALL=set(LBDZ)
-    #printp('3--'+str(LBALL))
     bar['value']=70
-    #if TGZ:
-    #    LBGZ=getGZ(cookie)
-    #    #printp(LBGZ)
-    #    if len(LBALL)!=0:
-    #        LBALL=set(LBALL)&set(LBGZ)
-    #    else:
-    #        LBALL=set(LBGZ)
-    #printp(LBALL)
-    #bar['value']=70
     notime=True
     printp('')
     notime=False
@@ -702,12 +582,11 @@ def clicked():
                 return False
         if times>HJNUM:
             break
-        #printp(HJNUM,times,HJMD)
     bar['value']=90
     HJMD.sort()
     random.shuffle(HJMD)
     notime=False
-    printp('抽取完成！\n获奖者名单：')#+str(HJMD)) ，以下为
+    printp('抽取完成！\n获奖名单：')
     notime=True
     printp('-------------------------------------------')
     getname(HJMD)
@@ -721,7 +600,62 @@ def clicked2():
     #关于窗口
     tkinter.messagebox.showinfo("关于", 'B站动态抽奖工具 Python GUI版 '+version+'\n更新日期: '+updatetime+'\nBy: 芍芋\nWebsite: https://shoyu.top')
 
-#继续初始化窗口
+window = Tk()#初始化一个窗口
+window.title('B站动态抽奖工具 Python GUI版 '+version+' '+updatetime+' By: 芍芋')#标题
+window.configure(bg='white')#背景颜色
+#window.geometry("820x300")
+
+#窗口居中实现
+width = 690 #720 Linux
+heigh = 300 #380 Linux
+screenwidth = window.winfo_screenwidth()
+screenheight = window.winfo_screenheight()-50
+window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
+window.resizable(0,0)#设置禁止调整窗口大小
+#定义图标
+try:
+    window.iconbitmap('icon.ico')
+except:
+    try:
+        setIcon()
+    except:
+        pass
+#定义文本
+lbl1 = Label(window, text="动态链接/ID")
+lbl1.place(x=10, y=10)
+lbl1.configure(bg='white')
+txt = Entry(window, width=40, relief="solid")
+txt.place(x=10, y=35)
+#txt.focus()
+lbl2 = Label(window, text="抽奖条件")
+lbl2.place(x=10, y=70)
+lbl2.configure(bg='white')
+#定义复选框
+chk1_state = BooleanVar()
+chk1_state.set(False) # Set check state
+chk1 = Checkbutton(window, text="转发", var=chk1_state)
+chk1.place(x=10, y=90)
+chk1.configure(bg='white')
+chk2_state = BooleanVar()
+chk2_state.set(False) # Set check state
+chk2 = Checkbutton(window, text="评论", var=chk2_state)
+chk2.place(x=90, y=90)
+chk2.configure(bg='white')
+chk3_state = BooleanVar()
+chk3_state.set(False) # Set check state
+chk3 = Checkbutton(window, text="点赞", var=chk3_state)
+chk3.place(x=170, y=90)
+chk3.configure(bg='white')
+chk4_state = BooleanVar()
+chk4_state.set(False) # Set check state
+chk4 = Checkbutton(window, text="关注", var=chk4_state)
+chk4.place(x=250, y=90)
+chk4.configure(bg='white')
+chk5_state = BooleanVar()
+chk5_state.set(False) # Set check state
+chk5 = Checkbutton(window, text="保存抽奖记录", var=chk5_state)
+chk5.place(x=10, y=210)
+chk5.configure(bg='white')
 btn = Button(window, text="开始抽奖", command=clicked)
 btn.place(x=240, y=210)
 btn.configure(bg='deepskyblue')
@@ -748,10 +682,10 @@ spin2.configure(bg='white')
 output = scrolledtext.ScrolledText(window, width=48, height=20, relief="solid")
 output.place(x=320, y=17)
 output['state']='disabled'
-#output.insert('end','1\n')
-#output.insert('end','1')
 bar = Progressbar(window, length=290)
 bar.place(x=10, y=258)
 bar['value']=0
 chk1.select()
-window.mainloop()#显示窗口
+
+#显示窗口
+window.mainloop()
