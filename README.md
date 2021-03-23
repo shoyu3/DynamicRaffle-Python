@@ -19,4 +19,4 @@
 
 2.运行getcookie.exe并按提示操作获取（在Release里）
 
-3.在浏览器打开 https://t.bili.fan ，点击“登录/cookie操作”，按照网页上的指示获取
+3.在浏览器打开 https://bili.fan/tools/login/ ，按照网页上的指示获取
