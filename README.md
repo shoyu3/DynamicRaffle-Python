@@ -16,5 +16,7 @@
 检测关注需要登录自己的B站账号，有3种方式：
 
 1.在浏览器登录账号并获取cookie（推荐，较复杂）[点击这里查看](https://github.com/shoyu3/bilifanswithmail/blob/main/AboutCookies-old.md)
+
 2.运行getcookie.exe并按提示操作
+
 3.在浏览器打开 https://t.bili.fan 并点击“登录/cookie操作”
