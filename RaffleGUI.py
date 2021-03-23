@@ -16,6 +16,7 @@ import random
 import tkinter.messagebox
 from datetime import datetime,timedelta
 import secrets
+import _thread
 #from random import choice
 #from random import sample
 #上方代码导入所有需要的库
@@ -24,8 +25,8 @@ import base64
 from iconwin import img
 #打包成exe所需的库
 
-version='1.0.0'
-updatetime='2021-03-22'
+version='1.0.2.003'
+updatetime='2021-03-23'
 
 def setIcon():
     #释放icon.py所保存的图标，打包exe时要用
@@ -35,15 +36,15 @@ def setIcon():
     window.iconbitmap("tmp.ico") #设置图标
     os.remove("tmp.ico")           #删除临时图标
 
-def nowtm():
-    #记录列表输出当前时间
-    if not notime:
-        now = datetime.now()
-        nowtime=now.strftime("%H:%M:%S")
-        return '['+nowtime+']'
-    else:
-        return ''
+def setIcon2():
+    #释放icon.py所保存的图标，打包exe时要用
+    tmp=open('tmp.ico','wb+')
+    tmp.write(base64.b64decode(img))#写入到临时文件中
+    tmp.close()
+    chkupdwindow.iconbitmap("tmp.ico") #设置图标
+    os.remove("tmp.ico")           #删除临时图标
 
+EnaRZ=False
 def printp(text):
     #输出记录到文本框
     #print(text)
@@ -57,6 +58,49 @@ def printp(text):
         RZtxt.write(text)
         RZtxt.write('\n')
         RZtxt.close()
+
+notime=True
+def nowtm():
+    #记录列表输出当前时间
+    if not notime:
+        now = datetime.now()
+        nowtime=now.strftime("%H:%M:%S")
+        return '['+nowtime+']'
+    else:
+        return ''
+
+def chkupd():
+    global updinfo
+    ver=version[version.rfind('.'):]
+    head, sep, ver = ver.partition('.')
+    #print(ver)
+    header={
+    "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+    }
+    try:
+        r=requests.get('https://api.github.com/repos/shoyu3/DynamicRaffle-Python/releases/latest',headers=header)
+        gitreturn=json.loads(r.text)
+        gitversion=gitreturn['name']
+        gitver=gitversion[gitversion.rfind('.'):]
+        head, sep, gitver = gitver.partition('.')
+        #print(gitver)
+        if ver!=gitver:
+            #print('服务器有新版本，请更新！')
+            chklbl1.configure(text='有新版本可用！')
+            IsGotoupd=tkinter.messagebox.askyesno("提示", '有新版本可用！建议及时更新~\n当前版本：'+str(version)+'\n最新版本：'+str(gitversion)+'\n更新说明：'+gitreturn['body']+'\n点击“是”前往更新，点击“否”继续运行')
+            if IsGotoupd:
+                os.system('start '+gitreturn['html_url'])
+            updinfo='有新版本可用！('+gitversion+' > '+version+')'
+        else:
+            chklbl1.configure(text='恭喜~当前版本已是最新!')
+            time.sleep(0.8)
+            updinfo='当前版本已是最新！('+version+')'
+        printp(updinfo)
+    except:
+        chklbl1.configure(text='检测更新时出现了问题!呜呜呜…')
+        time.sleep(0.8)
+        #print('当前版本已是最新！')
+    chkupdwindow.destroy()
 
 #下面两条def在获取数据时会用到，定义链接
 def gzlisturl(page):
@@ -102,7 +146,7 @@ def _get_offset(data_json):
         return None
 
 def getZF(dyn_id):
-    printp('尝试获取完整转发列表……')
+    printp('正在获取完整转发列表……')
     dynamic_api = "http://api.vc.bilibili.com/dynamic_repost/v1/dynamic_repost/repost_detail"
     info = {
         "time": now_time(),
@@ -148,11 +192,12 @@ def getZF(dyn_id):
         uidall.remove(myuid)
     except:
         pass
-    printp('完成，共有 '+str(len(uidall))+' 位，已存至数组中')
+    printp('完成，共有 '+str(len(uidall))+' 位，已存至列表中')
     return uidall
 
 def getPL(Dynamic_id):
-    printp('尝试获取完整评论列表……')
+    global notime
+    printp('正在获取完整评论列表……')
     current_page = 1
     header={
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/86.0.4324.182 Safari/537.36",
@@ -172,11 +217,15 @@ def getPL(Dynamic_id):
     r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
     json_data = json.loads(r)
     if json_data['code']==-404:
-        printp('获取评论失败，可能因为此动态没有除UP主自己的评论以外的评论!')
-        return False
+        notime=True
+        printp('获取评论失败,可能因为此动态没有除UP主自己的评论以外的评论呢')
+        notime=False
+        sys.exit()
     if json_data['code']==-412:
-        printp('获取评论失败，调取间隔过短，请稍后重试!')
-        return False
+        notime=True
+        printp('获取评论失败，调取间隔过短，请过一段时间再试吧~')
+        notime=False
+        sys.exit()
     comments_num = json_data['data']['page']['count']
     pages_num = comments_num // 20 + 1
 
@@ -195,12 +244,12 @@ def getPL(Dynamic_id):
         userlist_1.remove(myuid)
     except:
         pass
-    printp('完成，共有 '+str(len(userlist_1))+' 位，已存至数组中')
+    printp('完成，共有 '+str(len(userlist_1))+' 位，已存至列表中')
     return userlist_1
 
 def getDZ(dyid):
     global errortime
-    printp('尝试获取完整点赞列表……')
+    printp('正在获取完整点赞列表……')
     header={
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
     }
@@ -237,7 +286,7 @@ def getDZ(dyid):
         userlist_1.remove(myuid)
     except:
         pass
-    printp('完成，共有 '+str(len(userlist_1))+' 位，已存至数组中')
+    printp('完成，共有 '+str(len(userlist_1))+' 位，已存至列表中')
     return list(userlist_1)
 
 def getname(users):
@@ -273,7 +322,7 @@ def checkGZ(mid):
         rinfo=resback.get('data')
         be_relation=rinfo['be_relation']['attribute']
         if not be_relation==2 and not be_relation==6:
-            printp('[ UID:'+str(mid)+' 未关注('+str(be_relation)+')，无效 ]')
+            printp('[UID:'+str(mid)+' 未关注('+str(be_relation)+')，无效]')
             return False
         else:
             return True
@@ -284,6 +333,7 @@ def checkCJH(mid,condition):
     if GLCJH:
         #false为不通过
         raffle_count=0
+        condition=10-condition
         url='http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/space_history?visitor_uid=0&host_uid='+str(mid)+'&offset_dynamic_id=0'
         header={
         "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
@@ -306,11 +356,18 @@ def checkCJH(mid,condition):
             times=0
             while times<check_count:
                 #print(rinfo['cards'][times]['card'])
-                if '抽奖' in rinfo['cards'][times]['card']:
+                dycontent=rinfo['cards'][times]['card']
+                cjkw1='抽' in dycontent and '奖' in dycontent
+                cjkw2='抽' in dycontent and '送' in dycontent
+                cjkw3='关' in dycontent and '转' in dycontent
+                cjkw4='转' in dycontent and '评' in dycontent
+                cjkw5='转' in dycontent and '留言' in dycontent
+                cjkwall=cjkw1 or cjkw2 or cjkw3 or cjkw4 or cjkw5
+                if cjkwall:
                     raffle_count=raffle_count+1
                 times=times+1
         if raffle_count > condition:
-            printp('[ UID:'+str(mid)+' 判定为抽奖号('+str(raffle_count)+'/'+str(condition)+')，无效 ]')
+            printp('[UID:'+str(mid)+' 判定为抽奖号('+str(10-raffle_count)+'/'+str(10-condition)+')，无效]')
             return False
         else:
             return True
@@ -350,17 +407,17 @@ def clicked():
     output.delete(1.0, END)
     output['state']='disabled'
     if txt.get()=='':
-        tkinter.messagebox.showwarning("提示", '请输入动态链接/ID！')
+        tkinter.messagebox.showwarning("提示", '需要输入动态链接/ID的嗷！')
         return False
     try:
         dyid=linktodyid(txt.get())
         dyid=int(dyid)
     except:
-        tkinter.messagebox.showwarning("提示", '输入的动态ID/链接不正确！')
+        tkinter.messagebox.showwarning("提示", '输入的动态ID/链接不正确呢！')
         #printp('')
         return False
     if len(str(dyid))<18:
-        tkinter.messagebox.showwarning("提示", '输入的动态ID长度不够 ('+str(len(str(dyid)))+'/'+'18) ！')
+        tkinter.messagebox.showwarning("提示", '输入的动态ID长度不够呢 ('+str(len(str(dyid)))+'/'+'18) ！')
         return False
     LBGZ=[]
     LBZF=[]
@@ -372,30 +429,29 @@ def clicked():
     EnaRZ=False
     notime=True
     if not TGZ and not TZF and not TPL and not TDZ:
-        tkinter.messagebox.showwarning("提示", '请至少选中一个获奖条件！')
+        tkinter.messagebox.showwarning("提示", '需要至少选中一个获奖条件呢！')
         #printp()
         return False
     if TGZ and not TZF and not TPL and not TDZ:
-        tkinter.messagebox.showwarning("提示", '还需要选择除了关注以外的任一获奖条件！')
+        tkinter.messagebox.showwarning("提示", '还需要选择除了关注以外的任一获奖条件嗷！')
         #printp()
         return False
     try:
         HJNUM=int(spin.get())
     except:
-        tkinter.messagebox.showwarning("提示",'输入的获奖者数量无效！')
+        tkinter.messagebox.showwarning("提示",'输入的获奖者数量没有意义呢！')
         return False
     if HJNUM<1:
-        tkinter.messagebox.showwarning("提示",'输入的获奖者数量小于1！')
+        tkinter.messagebox.showwarning("提示",'输入的获奖者数量小于1，这是不想让任何小伙伴抽中？')
         return False
     try:
         CJHnum=int(spin2.get())
     except:
-        tkinter.messagebox.showwarning("提示",'输入的过滤抽奖号的值无效！')
+        tkinter.messagebox.showwarning("提示",'输入的过滤抽奖号的值没有意义嗷！')
         return False
     if CJHnum<0 or CJHnum>10:
-        tkinter.messagebox.showwarning("提示",'输入的过滤抽奖号的值小于0或大于10！')
+        tkinter.messagebox.showwarning("提示",'输入的过滤抽奖号的值小于0或大于10！请不要调戏我呢……')
         return False
-
     if TRZ:
         TimeSt=time.strftime("%Y-%m-%d-%H-%M-%S",time.localtime())
         rzpath='抽奖记录'+TimeSt+'.txt'
@@ -404,15 +460,15 @@ def clicked():
         EnaRZ=True
     else:
         EnaRZ=False
+    printp(updinfo)
     bar['value']=10
     TZF2=repBool(TZF)
     TPL2=repBool(TPL)
     TDZ2=repBool(TDZ)
     TGZ2=repBool(TGZ)
-    printp('转发：'+str(TZF2)+' 评论：'+str(TPL2)+' 点赞：'+str(TDZ2)+' 关注：'+str(TGZ2))
+    printp('转发：'+str(TZF2)+' 评论：'+str(TPL2)+' 点赞：'+str(TDZ2)+' 关注：'+str(TGZ2)+' 抽奖号阈值：'+str(CJHnum))
     if CJHnum!=0:
         GLCJH=True
-        printp('抽奖号过滤阈值设置为：'+str(CJHnum))
     else:
         GLCJH=False
     notime=False
@@ -423,8 +479,8 @@ def clicked():
             cookie=cook.read()
         except:
             notime=True
-            printp('检测关注需要登录，请在刚才的文件选择窗口里选择包含cookie的文件!')
-            printp('提示：可以运行同一目录下的 getcookie.exe 或在浏览器打开 t.bili.fan 快速获取到自己的cookie')
+            printp('检测关注需要登录，记得在刚才的文件选择窗口里选择包含cookie的文件喔')
+            printp('假如还没有自己的cookie的话，可以运行同一目录下的getcookie.exe 或在浏览器打开 t.bili.fan 就能获取~')
             return False
         notime=True
         bar['value']=20
@@ -449,12 +505,6 @@ def clicked():
 
     #dyid=input('输入动态ID：')
     bar['value']=30
-    '''if TGZ and not TZF and not TPL and not TDZ:
-        printp('当前选择的是直接从粉丝列表里抽，将不会使用任何动态数据')
-        dyid=0
-        notime=True
-        printp('')
-    else:'''
     dyid=str(dyid)
     notime=False
     printp('正在获取动态详情……')
@@ -578,7 +628,7 @@ def clicked():
                 break
             else:
                 printp('')
-                printp('警告：参与者列表人数已小于设定的获奖者数量!\n建议：增加或取消抽奖号判定值，取消部分获奖条件')
+                printp('警告：参与者列表人数已小于设定的获奖者数量!\n建议：增加或取消抽奖号过滤值，取消部分获奖条件')
                 return False
         if times>HJNUM:
             break
@@ -621,13 +671,13 @@ except:
     except:
         pass
 #定义文本
-lbl1 = Label(window, text="动态链接/ID")
+lbl1 = Label(window, text="在下方输入动态链接或者ID")
 lbl1.place(x=10, y=10)
 lbl1.configure(bg='white')
 txt = Entry(window, width=40, relief="solid")
 txt.place(x=10, y=35)
 #txt.focus()
-lbl2 = Label(window, text="抽奖条件")
+lbl2 = Label(window, text="选择一下抽奖条件吧")
 lbl2.place(x=10, y=70)
 lbl2.configure(bg='white')
 #定义复选框
@@ -656,28 +706,28 @@ chk5_state.set(False) # Set check state
 chk5 = Checkbutton(window, text="保存抽奖记录", var=chk5_state)
 chk5.place(x=10, y=210)
 chk5.configure(bg='white')
-btn = Button(window, text="开始抽奖", command=clicked)
+btn = Button(window, text="开始抽奖!", command=clicked)
 btn.place(x=240, y=210)
 btn.configure(bg='deepskyblue')
 btn = Button(window, text="关于本程序", command=clicked2)
 btn.place(x=150, y=210)
 btn.configure(bg='white')
 lbl3 = Label(window, text="获奖人数")
-lbl3.place(x=10, y=160)
+lbl3.place(x=10, y=165)
 lbl3.configure(bg='white')
-lbl4 = Label(window, text="过滤抽奖号(0~10)\n值越小越严格,0=无")
-lbl4.place(x=137, y=152)
+lbl4 = Label(window, text="过滤抽奖号(0-10)\n值越大越严格,0=无")
+lbl4.place(x=137, y=157)
 lbl4.configure(bg='white')
-lbl5 = Label(window, text="注: 评论暂未支持楼中楼\n抽取时如果数据过多可能会出现无响应，耐心等待即可")
-lbl5.place(x=9, y=113)
+lbl5 = Label(window, text="注: 评论还没有支持获取楼中楼\n抽取时如果数据过多可能会出现无响应，耐心等待即可~")
+lbl5.place(x=8, y=116)
 lbl5.configure(bg='white')
 spin = Spinbox(window, from_=1, to=999, width=5)
-spin.place(x=70, y=162)
+spin.place(x=70, y=167)
 spin.configure(bg='white')
 var = StringVar(window)
 var.set("5")
 spin2 = Spinbox(window, from_=0, to=10, width=5, textvariable=var)
-spin2.place(x=245, y=162)
+spin2.place(x=245, y=167)
 spin2.configure(bg='white')
 output = scrolledtext.ScrolledText(window, width=48, height=20, relief="solid")
 output.place(x=320, y=17)
@@ -688,4 +738,28 @@ bar['value']=0
 chk1.select()
 
 #显示窗口
+
+chkupdwindow = Toplevel(window)
+chkupdwindow.title('检查更新')
+chkupdwindow.configure(bg='white')
+width = 300
+heigh = 100
+screenwidth = chkupdwindow.winfo_screenwidth()
+screenheight = chkupdwindow.winfo_screenheight()-50
+chkupdwindow.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
+chkupdwindow.resizable(0,0)
+try:
+    chkupdwindow.iconbitmap('icon.ico')
+except:
+    try:
+        setIcon2()
+    except:
+        pass
+chklbl1 = Label(chkupdwindow, text="正在检查是否有新版本…", justify="center")
+chklbl1.configure(bg='white')
+chklbl1.place(relx = 0.5, rely = 0.4, anchor = "center")
+_thread.start_new_thread(chkupd,())
+chkupdwindowIsOpen=True
+chkupdwindowIsOpen=False
+
 window.mainloop()
