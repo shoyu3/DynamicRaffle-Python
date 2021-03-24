@@ -13,6 +13,7 @@ import time
 import math
 import re
 import random
+import qrcode
 import tkinter.messagebox
 from tkinter import ttk
 from datetime import datetime,timedelta
@@ -26,25 +27,38 @@ import base64
 from iconwin import img
 #打包成exe所需的库
 
-version='1.0.3.004'
-updatetime='2021-03-24'
+version='1.0.4.005'
+updatetime='2021-03-25'
 
-def setIcon():
+def setIcon(win):
     #释放icon.py所保存的图标，打包exe时要用
     tmp=open('tmp.ico','wb+')
     tmp.write(base64.b64decode(img))#写入到临时文件中
     tmp.close()
-    window.iconbitmap("tmp.ico") #设置图标
+    win.iconbitmap("tmp.ico") #设置图标
     os.remove("tmp.ico")           #删除临时图标
 
-def setIcon2():
+'''def setIcon2():
     #释放icon.py所保存的图标，打包exe时要用
     tmp=open('tmp.ico','wb+')
     tmp.write(base64.b64decode(img))#写入到临时文件中
     tmp.close()
     chkupdwindow.iconbitmap("tmp.ico") #设置图标
-    os.remove("tmp.ico")           #删除临时图标
+    os.remove("tmp.ico")           #删除临时图标'''
 
+def jsonDataToUrlParams(params_data):
+    url_str = ''
+    nums = 0
+    max_nums = len(params_data)
+    for key in params_data:
+        nums = nums + 1
+        if nums == max_nums:
+            url_str += str(key) + '=' + str(params_data[key])
+        else:
+            url_str += str(key) + '=' + str(params_data[key]) + ';'
+    else:
+        return url_str
+    
 EnaRZ=False
 def printp(text):
     #输出记录到文本框
@@ -70,6 +84,7 @@ def nowtm():
     else:
         return ''
 
+updinfo='(更新检测未完成)'
 def chkupd():
     global updinfo
     ver=version[version.rfind('.'):]
@@ -222,12 +237,12 @@ def getPL(Dynamic_id):
         notime=True
         printp('获取评论失败,可能因为此动态没有除UP主自己的评论以外的评论呢')
         notime=False
-        sys.exit()
+        return False
     if json_data['code']==-412:
         notime=True
         printp('获取评论失败，调取间隔过短，请过一段时间再试吧~')
         notime=False
-        sys.exit()
+        return False
     comments_num = json_data['data']['page']['count']
     pages_num = comments_num // 20 + 1
 
@@ -513,14 +528,18 @@ def clicked():
     notime=False
     if TGZ:
         try:
-            cookiepath=askopenfilename(title='选择一个包含cookie的文本文件',initialdir=os.path.dirname(os.path.realpath(sys.argv[0])), filetypes=[('Cookie File','*.txt')])
-            cook=open(cookiepath,'r')
-            cookie=cook.read()
+                cook=open('cookie.txt','r')
+                cookie=cook.read()
         except:
-            notime=True
-            printp('检测关注需要登录，记得在刚才的文件选择窗口里\n选择包含cookie的文件喔')
-            printp('假如还没有自己的cookie的话，可以运行附带的\ngetcookie.exe 或在浏览器打开 t.bili.fan 就能获取')
-            return False
+            try:
+                cookiepath=askopenfilename(title='选择一个包含cookie的文本文件',initialdir=os.path.dirname(os.path.realpath(sys.argv[0])), filetypes=[('Cookie File','*.txt')])
+                cook=open(cookiepath,'r')
+                cookie=cook.read()
+            except:
+                notime=True
+                printp('检测关注需要登录，记得在刚才的文件选择窗口里\n选择包含cookie的文件喔')
+                printp('假如还没有自己的cookie的话，可以运行附带的\ngetcookie.exe 或在浏览器打开 t.bili.fan 就能获取')
+                return False
         notime=True
         bar['value']=20
         printp('尝试使用预设的cookie进行模拟登录……')
@@ -566,7 +585,7 @@ def clicked():
         printp('发送时间：'+time.strftime("%Y-%m-%d %H:%M:%S", tmstmp))
         printp('-------------------------------------------')
         notime=False
-    except:
+    except Exception as e:
         SHEXIT=False
         try:
             if TGZ and dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')!=myuid:
@@ -576,7 +595,7 @@ def clicked():
         if SHEXIT:
                 return False
         notime=True
-        printp('获取出错，可能是动态链接/ID输入有误，请检查')
+        printp('获取出错，可能是动态链接/ID输入有误，请检查\n详细信息如下：\n'+str(repr(e))+'\n获取到的信息：'+res.text)
         return False
     if not isLogin:
         myuid=dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')
@@ -624,6 +643,11 @@ def clicked():
     notime=False
     if TZF:
         LBZF=getZF(dyid)
+        try:
+            if not LBZF:
+                return False
+        except:
+            pass
         if len(LBALL)!=0:
             LBALL=set(LBALL)&set(LBZF)
         else:
@@ -631,6 +655,11 @@ def clicked():
     bar['value']=50
     if TPL:
         LBPL=getPL(dyid)
+        try:
+            if not LBPL:
+                return False
+        except:
+            pass
         if len(LBALL)!=0:
             LBALL=set(LBALL)&set(LBPL)
         else:
@@ -638,6 +667,11 @@ def clicked():
     bar['value']=60
     if TDZ:
         LBDZ=getDZ(dyid)
+        try:
+            if not LBDZ:
+                return False
+        except:
+            pass
         if len(LBALL)!=0:
             LBALL=set(LBALL)&set(LBDZ)
         else:
@@ -689,6 +723,186 @@ def clicked2():
     #关于窗口
     tkinter.messagebox.showinfo("关于", 'B站动态抽奖工具 Python GUI版 '+version+'\n更新日期: '+updatetime+'\nBy: 芍芋\nWebsite: https://shoyu.top')
 
+def clicked3():
+    global login1window
+    global login2window
+    global login3window
+    login1window = Toplevel(window)
+    login1window.title('登录/Cookie操作')
+    login1window.configure(bg='white')
+    width = 300
+    heigh = 100
+    screenwidth = login1window.winfo_screenwidth()
+    screenheight = login1window.winfo_screenheight()-50
+    login1window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
+    login1window.resizable(0,0)
+    try:
+        login1window.iconbitmap('icon.ico')
+    except:
+        try:
+            setIcon(login1window)
+        except:
+            pass
+    '''log1lbl1 = Label(login1window, text="正在检查是否有新版本…", justify="center")
+    log1lbl1.configure(bg='white')
+    log1lbl1.place(relx = 0.5, rely = 0.4, anchor = "center")'''
+    logbtn1 = Button(login1window, text="获取Cookie", command=clicked4)
+    logbtn1.place(x=105, y=10)
+    logbtn1.configure(bg='white')
+    logbtn2 = Button(login1window, text="注销Cookie", command=clicked5)
+    logbtn2.place(x=105, y=50)
+    logbtn2.configure(bg='white')
+    login1window.lift()
+    login1window.mainloop()
+
+def clicked4():
+    login1window.destroy()
+    url = 'http://passport.bilibili.com/qrcode/getLoginUrl'
+    #print('获取扫码登录请求……')
+    response = requests.get(url)
+    content = response.text
+    json_dict = json.loads(content)
+    jdata = json_dict['data']
+    oauthlink = jdata.get('url')
+    oauthkey = jdata.get('oauthKey')
+    '''print('本次请求的oauthKey为：' + oauthkey)
+    print('使用B站客户端扫描弹出的二维码并确认登录后关闭该窗口')'''
+    qr = qrcode.QRCode(version=5, error_correction=(qrcode.constants.ERROR_CORRECT_M), box_size=6, border=4)
+    qr.add_data(oauthlink)
+    qr.make(fit=True)
+    img = qr.make_image()
+    img.save('qrcode.png')
+    login2window = Toplevel(window)
+    login2window.title('使用B站客户端扫描登录')
+    width = 300
+    heigh = 300
+    screenwidth = login2window.winfo_screenwidth()
+    screenheight = login2window.winfo_screenheight()-50
+    login2window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
+    login2window.resizable(0,0)
+    login2window.configure(bg='white')
+    try:
+        login2window.iconbitmap('icon.ico')
+    except:
+        try:
+            setIcon(login2window)
+        except:
+            pass
+    photo = PhotoImage(file='qrcode.png')
+    w = Label(login2window, image=photo)
+    w.pack()
+    os.unlink('qrcode.png')
+    _thread.start_new_thread(chklog,(oauthkey,login2window))
+    login2window.mainloop()
+    '''os.unlink('qrcode.png')
+    data = {'oauthKey': oauthkey}
+    session = requests.session()
+    session.post(url2, data)
+    html_set_cookie = requests.utils.dict_from_cookiejar(session.cookies)
+    cookie = jsonDataToUrlParams(html_set_cookie)
+    print('获取到的cookie如下：' + cookie)
+    print('尝试使用获取到的cookie进行模拟登录……')
+    header = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36', 
+     'Cookie':cookie}
+    r = requests.get('http://api.bilibili.com/x/space/myinfo', headers=header).text
+    userinfo_dict = json.loads(r)'''
+
+def clicked5():
+    login1window.destroy()
+    cookiepath=''
+    #if cookiepath=='':'''
+    try:
+        if os.path.exists('cookie.txt'):
+            Isuse=tkinter.messagebox.askyesno("提示", '确认注销当前目录下的cookie？')
+            if Isuse:
+                cookiepath='cookie.txt'
+        if cookiepath=='':
+            cookiepath=askopenfilename(title='选择一个包含cookie的文本文件',initialdir=os.path.dirname(os.path.realpath(sys.argv[0])), filetypes=[('Cookie File','*.txt')])
+        cook=open(cookiepath,'r')
+        cookie=cook.read()
+    except:
+        tkinter.messagebox.showwarning("提示",'需要提供cookie才能注销掉呢……')
+        return False
+    #try:
+    cookies_dict={}
+    cookies = cookie.split(";")
+    for co in cookies:
+        co = co.strip()
+        p = co.split('=')
+        value = co.replace(p[0]+'=', '').replace('"', '')
+        cookies_dict[p[0]]=value
+    #print(cookies_dict)
+    csrftoken=cookies_dict['bili_jct']
+    #print(csrftoken)
+    #except:
+    #    tkinter.messagebox.showwarning("提示",'文件包含的cookie无效！')
+    #    return False
+    url="http://passport.bilibili.com/login/exit/v2"#+oauthkey
+    data={
+    "biliCSRF":csrftoken,
+    }
+    header={
+    "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+    "Cookie":cookie,
+    }
+    '''session = requests.session()
+    sessret=session.post(url, data, headers=header)
+    content=sessret.text'''
+    response=requests.post(url, headers=header, data=data)
+    content=response.text
+    try:
+        json_dict = json.loads(content)
+        jdata = json_dict
+    except:
+        tkinter.messagebox.showwarning("提示",'注销失败，cookie无效、已过期或已注销！')
+        return False
+    if jdata['code']==0:
+        if cookiepath=='cookie.txt':
+            try:
+                os.unlink('cookie.txt')
+            except:
+                pass
+        tkinter.messagebox.showinfo("提示",'文件包含的cookie已经成功从服务器上注销！')
+        return True
+    else:
+        tkinter.messagebox.showwarning("提示",'注销cookie时出现其他错误！('+str(jdata['code'])+')')
+        return False
+
+
+def chklog(oauthkey,win):
+    while True:
+        if win.winfo_exists():
+            url="http://passport.bilibili.com/qrcode/getLoginInfo"#+oauthkey
+            data = {'oauthKey': oauthkey}
+            session = requests.session()
+            sessret=session.post(url, data)
+            content=sessret.text
+            json_dict = json.loads(content)
+            jdata = json_dict#['data']
+            #print(jdata['data'])
+            #login2window.title('1')
+            if jdata['data']==-5:
+                win.title('请在客户端确认登录！')
+            elif jdata['data']==-2:
+                win.destroy()
+                tkinter.messagebox.showwarning('提示','二维码已过期，请刷新！')
+                break
+            else:
+                try:
+                    if jdata['code']==0:
+                        html_set_cookie = requests.utils.dict_from_cookiejar(session.cookies)
+                        cookie = jsonDataToUrlParams(html_set_cookie)
+                        outtxt = open('cookie.txt', 'w')
+                        outtxt.write(cookie)
+                        outtxt.close()
+                        win.destroy()
+                        tkinter.messagebox.showinfo('提示','已将cookie写入同一目录下的cookie.txt！')
+                except:
+                        pass
+        else:
+            break
+        time.sleep(3)
+
 window = Tk()#初始化一个窗口
 window.title('B站动态抽奖工具 Python GUI版 '+version+' '+updatetime+' By: 芍芋')#标题
 window.configure(bg='white')#背景颜色
@@ -706,7 +920,7 @@ try:
     window.iconbitmap('icon.ico')
 except:
     try:
-        setIcon()
+        setIcon(window)
     except:
         pass
 #定义文本
@@ -748,14 +962,17 @@ chk5.configure(bg='white')
 chk6_state = BooleanVar()
 chk6_state.set(True) # Set check state
 chk6 = Checkbutton(window, text="自动清空日志", var=chk6_state)
-chk6.place(x=10, y=267)
+chk6.place(x=10, y=257)
 chk6.configure(bg='white')
 btn = Button(window, text="开始抽奖!", command=clicked)
 btn.place(x=10, y=340)
 btn.configure(bg='deepskyblue',height=2,width=40)
-btn = Button(window, text="关于本程序", command=clicked2)
-btn.place(x=230, y=295)
-btn.configure(bg='white')
+btn2 = Button(window, text="关于本程序", command=clicked2)
+btn2.place(x=230, y=255)
+btn2.configure(bg='white')
+btn3 = Button(window, text="登录/Cookie操作", command=clicked3)
+btn3.place(x=195, y=295)
+btn3.configure(bg='white')
 lbl3 = Label(window, text="获奖人数")
 lbl3.place(x=10, y=165)
 lbl3.configure(bg='white')
@@ -810,14 +1027,14 @@ try:
     chkupdwindow.iconbitmap('icon.ico')
 except:
     try:
-        setIcon2()
+        setIcon(chkupdwindow)
     except:
         pass
 chklbl1 = Label(chkupdwindow, text="正在检查是否有新版本…", justify="center")
 chklbl1.configure(bg='white')
 chklbl1.place(relx = 0.5, rely = 0.4, anchor = "center")
 _thread.start_new_thread(chkupd,())
-chkupdwindowIsOpen=True
-chkupdwindowIsOpen=False
+#chkupdwindowIsOpen=True
+#chkupdwindowIsOpen=False
 
 window.mainloop()
