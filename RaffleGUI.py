@@ -14,6 +14,7 @@ import math
 import re
 import random
 import tkinter.messagebox
+from tkinter import ttk
 from datetime import datetime,timedelta
 import secrets
 import _thread
@@ -25,8 +26,8 @@ import base64
 from iconwin import img
 #打包成exe所需的库
 
-version='1.0.2.003'
-updatetime='2021-03-23'
+version='1.0.3.004'
+updatetime='2021-03-24'
 
 def setIcon():
     #释放icon.py所保存的图标，打包exe时要用
@@ -84,7 +85,7 @@ def chkupd():
         gitver=gitversion[gitversion.rfind('.'):]
         head, sep, gitver = gitver.partition('.')
         #print(gitver)
-        if ver!=gitver:
+        if ver<gitver:
             #print('服务器有新版本，请更新！')
             chklbl1.configure(text='有新版本可用！')
             IsGotoupd=tkinter.messagebox.askyesno("提示", '有新版本可用！建议及时更新~\n当前版本：'+str(version)+'\n最新版本：'+str(gitversion)+'\n更新说明：'+gitreturn['body']+'\n点击“是”前往更新，点击“否”继续运行')
@@ -99,6 +100,7 @@ def chkupd():
     except:
         chklbl1.configure(text='检测更新时出现了问题!呜呜呜…')
         time.sleep(0.8)
+        updinfo='检测更新时出现了问题……'
         #print('当前版本已是最新！')
     chkupdwindow.destroy()
 
@@ -333,7 +335,7 @@ def checkCJH(mid,condition):
     if GLCJH:
         #false为不通过
         raffle_count=0
-        condition=10-condition
+        condition=condition
         url='http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/space_history?visitor_uid=0&host_uid='+str(mid)+'&offset_dynamic_id=0'
         header={
         "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
@@ -367,7 +369,30 @@ def checkCJH(mid,condition):
                     raffle_count=raffle_count+1
                 times=times+1
         if raffle_count > condition:
-            printp('[UID:'+str(mid)+' 判定为抽奖号('+str(10-raffle_count)+'/'+str(10-condition)+')，无效]')
+            printp('[UID:'+str(mid)+' 判定为抽奖号('+str(raffle_count)+'/'+str(condition)+')，无效]')
+            return False
+        else:
+            return True
+    else:
+        return True
+
+def checklvl(mid, HJlvl):
+    if GLlvl:
+        url='http://api.bilibili.com/x/space/acc/info?mid='+str(mid)
+        header={
+        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/75.0.4324.182 Safari/537.36",
+        }
+        res = requests.get(url=url,headers=header)
+        resback=json.loads(res.text)
+        usrinfo=resback.get('data')
+        try:
+            usrlvl=usrinfo.get('level')
+        except:
+            #print(res.text)
+            printp('获取UID:'+str(mid)+'的等级信息出错，请自行查看!')
+            return True
+        if usrlvl<HJlvl:
+            printp('[UID:'+str(mid)+' 等级过低('+str(usrlvl)+')，无效]')
             return False
         else:
             return True
@@ -397,15 +422,17 @@ def clicked():
     global EnaRZ
     global rzpath
     global GLCJH
+    global GLlvl
     #print()
     TZF=bool(chk1_state.get())
     TPL=bool(chk2_state.get())
     TDZ=bool(chk3_state.get())
     TGZ=bool(chk4_state.get())
     TRZ=bool(chk5_state.get())
-    output['state']='normal'
-    output.delete(1.0, END)
-    output['state']='disabled'
+    if chk6_state.get():
+        output['state']='normal'
+        output.delete(1.0, END)
+        output['state']='disabled'
     if txt.get()=='':
         tkinter.messagebox.showwarning("提示", '需要输入动态链接/ID的嗷！')
         return False
@@ -445,12 +472,20 @@ def clicked():
         tkinter.messagebox.showwarning("提示",'输入的获奖者数量小于1，这是不想让任何小伙伴抽中？')
         return False
     try:
+        HJlvl=int(spin3.get())
+    except:
+        tkinter.messagebox.showwarning("提示",'输入的最低等级没有意义呢！')
+        return False
+    if HJlvl<0 or HJlvl>6:
+        tkinter.messagebox.showwarning("提示",'输入的最低等级小于0或大于6！请不要调戏我呢…')
+        return False
+    try:
         CJHnum=int(spin2.get())
     except:
         tkinter.messagebox.showwarning("提示",'输入的过滤抽奖号的值没有意义嗷！')
         return False
-    if CJHnum<0 or CJHnum>10:
-        tkinter.messagebox.showwarning("提示",'输入的过滤抽奖号的值小于0或大于10！请不要调戏我呢……')
+    if CJHnum<-1 or CJHnum>10:
+        tkinter.messagebox.showwarning("提示",'输入的过滤抽奖号的值小于-1或大于10！请不要调戏我呢…')
         return False
     if TRZ:
         TimeSt=time.strftime("%Y-%m-%d-%H-%M-%S",time.localtime())
@@ -466,11 +501,15 @@ def clicked():
     TPL2=repBool(TPL)
     TDZ2=repBool(TDZ)
     TGZ2=repBool(TGZ)
-    printp('转发：'+str(TZF2)+' 评论：'+str(TPL2)+' 点赞：'+str(TDZ2)+' 关注：'+str(TGZ2)+' 抽奖号阈值：'+str(CJHnum))
-    if CJHnum!=0:
+    printp('转发：'+str(TZF2)+' 评论：'+str(TPL2)+' 点赞：'+str(TDZ2)+' 关注：'+str(TGZ2)+'\n最低等级：'+str(HJlvl)+' 抽奖号阈值：'+str(CJHnum))
+    if CJHnum!=-1:
         GLCJH=True
     else:
         GLCJH=False
+    if HJlvl!=0:
+        GLlvl=True
+    else:
+        GLlvl=False
     notime=False
     if TGZ:
         try:
@@ -479,8 +518,8 @@ def clicked():
             cookie=cook.read()
         except:
             notime=True
-            printp('检测关注需要登录，记得在刚才的文件选择窗口里选择包含cookie的文件喔')
-            printp('假如还没有自己的cookie的话，可以运行同一目录下的getcookie.exe 或在浏览器打开 t.bili.fan 就能获取~')
+            printp('检测关注需要登录，记得在刚才的文件选择窗口里\n选择包含cookie的文件喔')
+            printp('假如还没有自己的cookie的话，可以运行附带的\ngetcookie.exe 或在浏览器打开 t.bili.fan 就能获取')
             return False
         notime=True
         bar['value']=20
@@ -619,7 +658,7 @@ def clicked():
             if not len(LBALL) < HJNUM:
                 HJuser=secrets.choice(list(LBALL))#这句是核心功能之一，随机从参与者数组里抽一位
                 if not HJuser in HJMD:
-                    if checkGZ(HJuser) and checkCJH(HJuser,CJHnum):
+                    if checkGZ(HJuser) and checkCJH(HJuser,CJHnum) and checklvl(HJuser,HJlvl):
                         HJMD.append(HJuser)
                         times=times+1
                     else:
@@ -636,7 +675,7 @@ def clicked():
     HJMD.sort()
     random.shuffle(HJMD)
     notime=False
-    printp('抽取完成！\n获奖名单：')
+    printp('抽取完成！\n获奖名单：(以UID为准)')
     notime=True
     printp('-------------------------------------------')
     getname(HJMD)
@@ -657,7 +696,7 @@ window.configure(bg='white')#背景颜色
 
 #窗口居中实现
 width = 690 #720 Linux
-heigh = 300 #380 Linux
+heigh = 450 #530 Linux
 screenwidth = window.winfo_screenwidth()
 screenheight = window.winfo_screenheight()-50
 window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
@@ -704,36 +743,55 @@ chk4.configure(bg='white')
 chk5_state = BooleanVar()
 chk5_state.set(False) # Set check state
 chk5 = Checkbutton(window, text="保存抽奖记录", var=chk5_state)
-chk5.place(x=10, y=210)
+chk5.place(x=10, y=297)
 chk5.configure(bg='white')
+chk6_state = BooleanVar()
+chk6_state.set(True) # Set check state
+chk6 = Checkbutton(window, text="自动清空日志", var=chk6_state)
+chk6.place(x=10, y=267)
+chk6.configure(bg='white')
 btn = Button(window, text="开始抽奖!", command=clicked)
-btn.place(x=240, y=210)
-btn.configure(bg='deepskyblue')
+btn.place(x=10, y=340)
+btn.configure(bg='deepskyblue',height=2,width=40)
 btn = Button(window, text="关于本程序", command=clicked2)
-btn.place(x=150, y=210)
+btn.place(x=230, y=295)
 btn.configure(bg='white')
 lbl3 = Label(window, text="获奖人数")
 lbl3.place(x=10, y=165)
 lbl3.configure(bg='white')
-lbl4 = Label(window, text="过滤抽奖号(0-10)\n值越大越严格,0=无")
-lbl4.place(x=137, y=157)
+lbl4 = Label(window, text="过滤抽奖号(0-10)\n值越小越严格,-1=无")
+lbl4.place(x=133, y=157)
 lbl4.configure(bg='white')
 lbl5 = Label(window, text="注: 评论还没有支持获取楼中楼\n抽取时如果数据过多可能会出现无响应，耐心等待即可~")
 lbl5.place(x=8, y=116)
 lbl5.configure(bg='white')
+lbl6 = Label(window, text="最低等级\n(0-6)")
+lbl6.place(x=10, y=197)
+lbl6.configure(bg='white')
 spin = Spinbox(window, from_=1, to=999, width=5)
 spin.place(x=70, y=167)
 spin.configure(bg='white')
 var = StringVar(window)
-var.set("5")
-spin2 = Spinbox(window, from_=0, to=10, width=5, textvariable=var)
+'''spin2 = Spinbox(window, from_=-1, to=10, width=5, textvariable=var)
 spin2.place(x=245, y=167)
-spin2.configure(bg='white')
-output = scrolledtext.ScrolledText(window, width=48, height=20, relief="solid")
-output.place(x=320, y=17)
+spin2.configure(bg='white')'''
+spin2 = ttk.Combobox(window, width=4, textvariable=var)
+spin2['values']=(-1,0,1,2,3,4,5,6,7,8,9,10)
+spin2.place(x=245, y=167)
+#spin2.configure(bg='white')
+#spin3 = Spinbox(window, from_=0, to=6, width=5)
+var2 = StringVar(window)
+spin3 = ttk.Combobox(window, width=4, textvariable=var2)
+spin3['values']=(0,1,2,3,4,5,6)
+spin3.place(x=70, y=207)
+spin2.current(0)
+spin3.current(0)
+#spin3.configure(bg='white')
+output = scrolledtext.ScrolledText(window, width=48, height=31, relief="solid")
+output.place(x=315, y=17)
 output['state']='disabled'
 bar = Progressbar(window, length=290)
-bar.place(x=10, y=258)
+bar.place(x=10, y=402)
 bar['value']=0
 chk1.select()
 
