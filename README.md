@@ -15,7 +15,7 @@
 
 ## 如何使用
 
-前往[本项目最新的Release](https://github.com/shoyu3/DynamicRaffle-Python/releases/latest)，点击文件列表中的RaffleGUI.exe文件下载，直接双击运行
+前往[本项目最新的Release](https://github.com/shoyu3/DynamicRaffle-Python/releases/latest)，点击文件列表中的RaffleGUI.exe文件下载，双击运行
 
 ## 关于关注检测
 
@@ -25,7 +25,7 @@
 
 ## 源码目录
 
-- RafflwGUI.py 主程序
+- RaffleGUI.py 主程序
 - icon.ico 窗口图标
 - iconwin.py 包含窗口图标base64码的文件，打包exe需要使用
 - icopyspawn.py 将当前目录下的icon.ico转换生成iconwin.py，更新图标时需要使用
