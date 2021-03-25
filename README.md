@@ -1,9 +1,10 @@
 # DynamicRaffle-Python
 哔哩哔哩动态抽奖工具，项目开始于2021年3月16日
 
-程序功能展示截图：
+## 程序功能展示截图：
 
 最新版本（1.0.5）：
+
 ![截图1](https://user-images.githubusercontent.com/75879378/112523063-4fbae480-8dd9-11eb-879b-3d9a4182fc12.png)
 
 某个旧版：
@@ -12,17 +13,17 @@
 
 部分实现方法源自项目：https://github.com/LeoChen98/BiliRaffle
 
-# 如何使用
+## 如何使用
 
 前往[本项目最新的Release](https://github.com/shoyu3/DynamicRaffle-Python/releases/latest)，点击文件列表中的RaffleGUI.exe文件下载，直接双击运行
 
-# 关于关注检测
+## 关于关注检测
 
 检测关注需要登录自己的B站账号，在最近的版本里已经整合进了getcookie.exe的功能，另外还增加了注销cookie的选项，可以快速注销此次登录
 
 芍芋建议如果不是很经常使用抽奖关注检测功能的话应该在使用完之后注销cookie，保护账号安全（当然就算不注销只要不对外泄露就不会出问题）
 
-# 源码目录
+## 源码目录
 
 - RafflwGUI.py 主程序
 - icon.ico 窗口图标
