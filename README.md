@@ -13,10 +13,13 @@
 
 # 关于关注检测
 
-检测关注需要登录自己的B站账号，有3种方式：
+检测关注需要登录自己的B站账号，在最近的版本里已经整合进了getcookie.exe的功能，另外还增加了注销cookie的入口
 
-1.在浏览器登录账号并获取cookie（推荐，较复杂）[点击这里查看](https://github.com/shoyu3/bilifanswithmail/blob/main/AboutCookies-old.md)
+芍芋建议如果不是很经常使用抽奖关注检测功能的应该在使用完之后注销cookie，保护账号安全（当然就算不注销只要不对外泄露就不会有安全问题）
 
-2.运行getcookie.exe并按提示操作获取（在Release里）
+# 关于源码
 
-3.在浏览器打开 https://bili.fan/tools/login/ ，按照网页上的指示获取
+RafflwGUI.py 主程序
+icon.ico 窗口图标
+iconwin.py 包含窗口图标base64码的文件，打包exe需要使用
+icopyspawn.py 将当前目录下的icon.ico转换生成iconwin.py，更新图标时需要使用
