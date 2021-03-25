@@ -2,10 +2,7 @@ from tkinter import *
 from tkinter.ttk import Progressbar
 from tkinter import ttk
 from tkinter import scrolledtext
-from tkinter.filedialog import (askopenfilename, 
-                                    askopenfilenames, 
-                                    askdirectory, 
-                                    asksaveasfilename)
+from tkinter.filedialog import (askopenfilename,askopenfilenames,askdirectory,asksaveasfilename)
 import requests
 import json
 import sys,os
@@ -19,6 +16,7 @@ from tkinter import ttk
 from datetime import datetime,timedelta
 import secrets
 import _thread
+import threading
 #from random import choice
 #from random import sample
 #上方代码导入所有需要的库
@@ -27,8 +25,8 @@ import base64
 from iconwin import img
 #打包成exe所需的库
 
-version='1.0.4.005'
-updatetime='2021-03-25'
+version='1.0.5.006'
+updatetime='2021-03-26'
 
 def setIcon(win):
     #释放icon.py所保存的图标，打包exe时要用
@@ -37,14 +35,6 @@ def setIcon(win):
     tmp.close()
     win.iconbitmap("tmp.ico") #设置图标
     os.remove("tmp.ico")           #删除临时图标
-
-'''def setIcon2():
-    #释放icon.py所保存的图标，打包exe时要用
-    tmp=open('tmp.ico','wb+')
-    tmp.write(base64.b64decode(img))#写入到临时文件中
-    tmp.close()
-    chkupdwindow.iconbitmap("tmp.ico") #设置图标
-    os.remove("tmp.ico")           #删除临时图标'''
 
 def jsonDataToUrlParams(params_data):
     url_str = ''
@@ -64,7 +54,7 @@ def printp(text):
     #输出记录到文本框
     #print(text)
     output['state']='normal'
-    output.insert('end',nowtm()+text+'\n')
+    output.insert('end',nowtm()+str(text)+'\n')
     output['state']='disabled'
     output.see(END)
     window.update()
@@ -103,7 +93,11 @@ def chkupd():
         if ver<gitver:
             #print('服务器有新版本，请更新！')
             chklbl1.configure(text='有新版本可用！')
-            IsGotoupd=tkinter.messagebox.askyesno("提示", '有新版本可用！建议及时更新~\n当前版本：'+str(version)+'\n最新版本：'+str(gitversion)+'\n更新说明：'+gitreturn['body']+'\n点击“是”前往更新，点击“否”继续运行')
+            if '\n 'in gitreturn['body']:
+                hh='\n'
+            else:
+                hh=''
+            IsGotoupd=tkinter.messagebox.askyesno("提示", '有新版本可用！建议及时更新~\n当前版本：'+str(version)+'\n最新版本：'+str(gitversion)+'\n更新说明：'+hh+gitreturn['body']+'\n点击“是”前往更新，点击“否”继续运行')
             if IsGotoupd:
                 os.system('start '+gitreturn['html_url'])
             updinfo='有新版本可用！('+gitversion+' > '+version+')'
@@ -119,10 +113,7 @@ def chkupd():
         #print('当前版本已是最新！')
     chkupdwindow.destroy()
 
-#下面两条def在获取数据时会用到，定义链接
-def gzlisturl(page):
-    return 'http://api.bilibili.com/x/relation/followers?vmid='+str(myuid)+'&pn='+str(page)
-
+#下面1条def在获取数据时会用到，定义链接
 def likelisturl(page):
     return 'http://api.vc.bilibili.com/dynamic_like/v1/dynamic_like/spec_item_likes?dynamic_id='+str(dyid)+'&pn='+str(page)
 
@@ -164,6 +155,7 @@ def _get_offset(data_json):
 
 def getZF(dyn_id):
     printp('正在获取完整转发列表……')
+    printp('Loading...')
     dynamic_api = "http://api.vc.bilibili.com/dynamic_repost/v1/dynamic_repost/repost_detail"
     info = {
         "time": now_time(),
@@ -195,6 +187,12 @@ def getZF(dyn_id):
                 try:
                     uid = data_json['data']['items'][i]['desc']['uid']
                     uidall.append(uid)
+                    output['state']='normal'
+                    output.delete('end - 2 lines','end - 1 lines')
+                    output['state']='disabled'
+                    curusr=len(uidall)
+                    percent='%.2f' % float(curusr/total_num*100)
+                    printp(str(percent)+'% ('+str(curusr)+'/'+str(total_num)+')')
                 except:
                     pass
             else:  # 最后一页数量少于20时
@@ -209,6 +207,11 @@ def getZF(dyn_id):
         uidall.remove(myuid)
     except:
         pass
+    output['state']='normal'
+    output.delete('end - 2 lines','end - 1 lines')
+    output['state']='disabled'
+    '''curusr=len(uidall)
+    printp('100.00% ('+str(curusr)+'/'+str(curusr)+')')'''
     printp('完成，共有 '+str(len(uidall))+' 位，已存至列表中')
     return uidall
 
@@ -219,11 +222,6 @@ def getPL(Dynamic_id):
     header={
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/86.0.4324.182 Safari/537.36",
     }
-    '''
-    DynamicAPI = "https://api.live.bilibili.com/dynamic_repost/v1/dynamic_repost/view_repost?dynamic_id=" + Dynamic_id + "&offset=0"
-    r = gethtml(DynamicAPI,header)
-    json_data = json.loads(r)
-    href = json_data['data']['comments'][0]'''
     rid = dyinfo['card']['desc']['rid']
     link1 = 'http://api.bilibili.com/x/v2/reply?&jsonp=jsonp&pn='
     link2 = '&type=11&oid='
@@ -245,7 +243,7 @@ def getPL(Dynamic_id):
         return False
     comments_num = json_data['data']['page']['count']
     pages_num = comments_num // 20 + 1
-
+    printp('Loading...')
     while True:
         r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
         json_data1 = json.loads(r)
@@ -253,6 +251,12 @@ def getPL(Dynamic_id):
         if json_data1['data']['replies']:
             for reply in json_data1['data']['replies']:
                 userlist_1.append(int(reply['member']['mid']))
+                output['state']='normal'
+                output.delete('end - 2 lines','end - 1 lines')
+                output['state']='disabled'
+                curusr=len(userlist_1)
+                percent='%.2f' % float(curusr/comments_num*100)
+                printp(str(percent)+'% ('+str(curusr)+'/'+str(comments_num)+')')
         current_page += 1
         if current_page > pages_num:
             break
@@ -261,12 +265,19 @@ def getPL(Dynamic_id):
         userlist_1.remove(myuid)
     except:
         pass
+    output['state']='normal'
+    output.delete('end - 2 lines','end - 1 lines')
+    output['state']='disabled'
+    '''curusr=len(userlist_1)
+    printp('100.00% ('+str(curusr)+'/'+str(curusr)+')')'''
     printp('完成，共有 '+str(len(userlist_1))+' 位，已存至列表中')
     return userlist_1
 
 def getDZ(dyid):
     global errortime
+    global notime
     printp('正在获取完整点赞列表……')
+    printp('Loading...')
     header={
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
     }
@@ -281,6 +292,8 @@ def getDZ(dyid):
     times=1
     errortime=1
     userlist_1=[]
+    #notime=True
+    likes=dyinfo['card']['desc']['like']
     while times < pages+1:
         errortime=times
         r=gethtml(likelisturl(times), header)
@@ -292,10 +305,22 @@ def getDZ(dyid):
             while times2<20:
                 userlist_1.append(jlist[times2].get('uid'))
                 times2=times2+1
+                output['state']='normal'
+                output.delete('end - 2 lines','end - 1 lines')
+                output['state']='disabled'
+                curusr=len(userlist_1)
+                percent='%.2f' % float(curusr/likes*100)
+                printp(str(percent)+'% ('+str(curusr)+'/'+str(likes)+')')
         else:
             while times2<20-math2:
                 userlist_1.append(jlist[times2].get('uid'))
                 times2=times2+1
+                output['state']='normal'
+                output.delete('end - 2 lines','end - 1 lines')
+                output['state']='disabled'
+                curusr=len(userlist_1)
+                percent='%.2f' % float(curusr/likes*100)
+                printp(str(percent)+'% ('+str(curusr)+'/'+str(likes)+')')
         times=times+1
         time.sleep(0.3)
     userlist_1.sort()
@@ -303,6 +328,10 @@ def getDZ(dyid):
         userlist_1.remove(myuid)
     except:
         pass
+    notime=False
+    output['state']='normal'
+    output.delete('end - 2 lines','end - 1 lines')
+    output['state']='disabled'
     printp('完成，共有 '+str(len(userlist_1))+' 位，已存至列表中')
     return list(userlist_1)
 
@@ -407,7 +436,7 @@ def checklvl(mid, HJlvl):
             printp('获取UID:'+str(mid)+'的等级信息出错，请自行查看!')
             return True
         if usrlvl<HJlvl:
-            printp('[UID:'+str(mid)+' 等级过低('+str(usrlvl)+')，无效]')
+            printp('[UID:'+str(mid)+' 等级过低('+str(usrlvl)+'/'+str(HJlvl)+')，无效]')
             return False
         else:
             return True
@@ -425,6 +454,23 @@ def linktodyid(dyid):
         return dyid
 
 def clicked():
+    btn['state']=DISABLED
+    global cjthread
+    btn.configure(text="进行中…",bg='ivory')
+    cjthread=threading.Thread(target=clicked0,args=())
+    cjthread.start()
+    thread2=threading.Thread(target=checkthread,args=(cjthread,))
+    thread2.start()
+
+def checkthread(thread):
+    while True:
+        if not thread.is_alive():
+            break
+        time.sleep(1)
+    btn['state']=NORMAL
+    btn.configure(text="开始抽奖!",bg='deepskyblue')
+
+def clicked0():
     #程序开始运行
     bar['value']=0
     global notime
@@ -537,8 +583,8 @@ def clicked():
                 cookie=cook.read()
             except:
                 notime=True
-                printp('检测关注需要登录，记得在刚才的文件选择窗口里\n选择包含cookie的文件喔')
-                printp('假如还没有自己的cookie的话，可以运行附带的\ngetcookie.exe 或在浏览器打开 t.bili.fan 就能获取')
+                printp('检测关注需要登录，请点击“登录/Cookie操作”按钮进行登录！')
+                #printp('假如还没有自己的cookie的话，可以运行附带的\ngetcookie.exe 或在浏览器打开 t.bili.fan 就能获取')
                 return False
         notime=True
         bar['value']=20
@@ -572,6 +618,7 @@ def clicked():
         }
         url='https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+dyid
         res = requests.get(url=url,headers=header)
+        res.encoding='utf-8'
         resback=json.loads(res.text)
         dyinfo=resback.get('data')
         if TGZ and dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')!=myuid:
@@ -585,6 +632,7 @@ def clicked():
         printp('发送时间：'+time.strftime("%Y-%m-%d %H:%M:%S", tmstmp))
         printp('-------------------------------------------')
         notime=False
+        #print(dyinfo)
     except Exception as e:
         SHEXIT=False
         try:
@@ -595,7 +643,7 @@ def clicked():
         if SHEXIT:
                 return False
         notime=True
-        printp('获取出错，可能是动态链接/ID输入有误，请检查\n详细信息如下：\n'+str(repr(e))+'\n获取到的信息：'+res.text)
+        printp('获取出错，可能是动态链接/ID输入有误，请检查\n详细信息如下：\n'+str(repr(e))+'\n获取到的信息：\n'+res.text)
         return False
     if not isLogin:
         myuid=dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')
@@ -701,7 +749,7 @@ def clicked():
                 break
             else:
                 printp('')
-                printp('警告：参与者列表人数已小于设定的获奖者数量!\n建议：增加或取消抽奖号过滤值，取消部分获奖条件')
+                printp('警告：参与者列表人数已小于设定的获奖者数量!\n建议：修改或取消抽奖号过滤值，取消部分获奖条件')
                 return False
         if times>HJNUM:
             break
@@ -743,15 +791,12 @@ def clicked3():
             setIcon(login1window)
         except:
             pass
-    '''log1lbl1 = Label(login1window, text="正在检查是否有新版本…", justify="center")
-    log1lbl1.configure(bg='white')
-    log1lbl1.place(relx = 0.5, rely = 0.4, anchor = "center")'''
-    logbtn1 = Button(login1window, text="获取Cookie", command=clicked4)
-    logbtn1.place(x=105, y=10)
-    logbtn1.configure(bg='white')
-    logbtn2 = Button(login1window, text="注销Cookie", command=clicked5)
-    logbtn2.place(x=105, y=50)
-    logbtn2.configure(bg='white')
+    logbtn1 = ttk.Button(login1window, text="登录/获取Cookie", command=clicked4)
+    logbtn1.place(x=100, y=10)
+    #logbtn1.configure(bg='white')
+    logbtn2 = ttk.Button(login1window, text="退出登录/注销Cookie", command=clicked5)
+    logbtn2.place(x=87, y=50)
+    #logbtn2.configure(bg='white')
     login1window.lift()
     login1window.mainloop()
 
@@ -792,20 +837,10 @@ def clicked4():
     w = Label(login2window, image=photo)
     w.pack()
     os.unlink('qrcode.png')
-    _thread.start_new_thread(chklog,(oauthkey,login2window))
+    #_thread.start_new_thread(chklog,(oauthkey,login2window))
+    thread = threading.Thread(target=chklog,args=(oauthkey,login2window))
+    thread.start()
     login2window.mainloop()
-    '''os.unlink('qrcode.png')
-    data = {'oauthKey': oauthkey}
-    session = requests.session()
-    session.post(url2, data)
-    html_set_cookie = requests.utils.dict_from_cookiejar(session.cookies)
-    cookie = jsonDataToUrlParams(html_set_cookie)
-    print('获取到的cookie如下：' + cookie)
-    print('尝试使用获取到的cookie进行模拟登录……')
-    header = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36', 
-     'Cookie':cookie}
-    r = requests.get('http://api.bilibili.com/x/space/myinfo', headers=header).text
-    userinfo_dict = json.loads(r)'''
 
 def clicked5():
     login1window.destroy()
@@ -833,10 +868,6 @@ def clicked5():
         cookies_dict[p[0]]=value
     #print(cookies_dict)
     csrftoken=cookies_dict['bili_jct']
-    #print(csrftoken)
-    #except:
-    #    tkinter.messagebox.showwarning("提示",'文件包含的cookie无效！')
-    #    return False
     url="http://passport.bilibili.com/login/exit/v2"#+oauthkey
     data={
     "biliCSRF":csrftoken,
@@ -845,16 +876,13 @@ def clicked5():
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
     "Cookie":cookie,
     }
-    '''session = requests.session()
-    sessret=session.post(url, data, headers=header)
-    content=sessret.text'''
     response=requests.post(url, headers=header, data=data)
     content=response.text
     try:
         json_dict = json.loads(content)
         jdata = json_dict
     except:
-        tkinter.messagebox.showwarning("提示",'注销失败，cookie无效、已过期或已注销！')
+        tkinter.messagebox.showwarning("提示",'注销失败，可能是cookie无效、已过期或已注销！')
         return False
     if jdata['code']==0:
         if cookiepath=='cookie.txt':
@@ -923,11 +951,16 @@ except:
         setIcon(window)
     except:
         pass
+
+style= ttk.Style()
+style.configure("TCheckbutton", background="white")
+style.configure("cj.TButton", background="white",height=8,width=40)
+
 #定义文本
-lbl1 = Label(window, text="在下方输入动态链接或者ID")
+lbl1 = Label(window, text="在下方输入动态链接或者动态ID (使用Ctrl+V粘贴)")
 lbl1.place(x=10, y=10)
 lbl1.configure(bg='white')
-txt = Entry(window, width=40, relief="solid")
+txt = ttk.Entry(window, width=40)#, relief="solid", highlightcolor='blue',highlightthickness=1)
 txt.place(x=10, y=35)
 #txt.focus()
 lbl2 = Label(window, text="选择一下抽奖条件吧")
@@ -935,68 +968,63 @@ lbl2.place(x=10, y=70)
 lbl2.configure(bg='white')
 #定义复选框
 chk1_state = BooleanVar()
-chk1_state.set(False) # Set check state
-chk1 = Checkbutton(window, text="转发", var=chk1_state)
-chk1.place(x=10, y=90)
-chk1.configure(bg='white')
+chk1_state.set(True) # Set check state
+chk1 = ttk.Checkbutton(window, text="转发", var=chk1_state)#, onvalue=1, offvalue=0)
+chk1.place(x=10, y=92)
+chk1.configure(style="TCheckbutton")
 chk2_state = BooleanVar()
 chk2_state.set(False) # Set check state
-chk2 = Checkbutton(window, text="评论", var=chk2_state)
-chk2.place(x=90, y=90)
-chk2.configure(bg='white')
+chk2 = ttk.Checkbutton(window, text="评论", var=chk2_state)
+chk2.place(x=90, y=92)
+chk2.configure(style="TCheckbutton")
 chk3_state = BooleanVar()
 chk3_state.set(False) # Set check state
-chk3 = Checkbutton(window, text="点赞", var=chk3_state)
-chk3.place(x=170, y=90)
-chk3.configure(bg='white')
+chk3 = ttk.Checkbutton(window, text="点赞", var=chk3_state)
+chk3.place(x=170, y=92)
+chk3.configure(style="TCheckbutton")
 chk4_state = BooleanVar()
 chk4_state.set(False) # Set check state
-chk4 = Checkbutton(window, text="关注", var=chk4_state)
-chk4.place(x=250, y=90)
-chk4.configure(bg='white')
+chk4 = ttk.Checkbutton(window, text="关注", var=chk4_state)
+chk4.place(x=250, y=92)
+chk4.configure(style="TCheckbutton")
 chk5_state = BooleanVar()
 chk5_state.set(False) # Set check state
-chk5 = Checkbutton(window, text="保存抽奖记录", var=chk5_state)
+chk5 = ttk.Checkbutton(window, text="保存抽奖记录", var=chk5_state)
 chk5.place(x=10, y=297)
-chk5.configure(bg='white')
+chk5.configure(style="TCheckbutton")
 chk6_state = BooleanVar()
 chk6_state.set(True) # Set check state
-chk6 = Checkbutton(window, text="自动清空日志", var=chk6_state)
+chk6 = ttk.Checkbutton(window, text="自动清空日志", var=chk6_state)
 chk6.place(x=10, y=257)
-chk6.configure(bg='white')
+chk6.configure(style="TCheckbutton")
 btn = Button(window, text="开始抽奖!", command=clicked)
 btn.place(x=10, y=340)
 btn.configure(bg='deepskyblue',height=2,width=40)
-btn2 = Button(window, text="关于本程序", command=clicked2)
-btn2.place(x=230, y=255)
-btn2.configure(bg='white')
-btn3 = Button(window, text="登录/Cookie操作", command=clicked3)
-btn3.place(x=195, y=295)
-btn3.configure(bg='white')
+btn2 = ttk.Button(window, text="关于本程序", command=clicked2)
+btn2.place(x=213, y=255)
+#btn2.configure(style="TButton")
+btn3 = ttk.Button(window, text="登录/Cookie操作", command=clicked3)
+btn3.place(x=196, y=295)
+#btn3.configure(style="TButton")
 lbl3 = Label(window, text="获奖人数")
-lbl3.place(x=10, y=165)
+lbl3.place(x=10, y=155)
 lbl3.configure(bg='white')
 lbl4 = Label(window, text="过滤抽奖号(0-10)\n值越小越严格,-1=无")
-lbl4.place(x=133, y=157)
+lbl4.place(x=133, y=147)
 lbl4.configure(bg='white')
-lbl5 = Label(window, text="注: 评论还没有支持获取楼中楼\n抽取时如果数据过多可能会出现无响应，耐心等待即可~")
-lbl5.place(x=8, y=116)
+lbl5 = Label(window, text="注: 评论还没有支持获取楼中楼")#\n抽取时如果数据过多可能会出现无响应，耐心等待即可~")
+lbl5.place(x=10, y=116)
 lbl5.configure(bg='white')
 lbl6 = Label(window, text="最低等级\n(0-6)")
 lbl6.place(x=10, y=197)
 lbl6.configure(bg='white')
-spin = Spinbox(window, from_=1, to=999, width=5)
-spin.place(x=70, y=167)
-spin.configure(bg='white')
+spin = ttk.Spinbox(window, from_=1, to=999, width=5)
+spin.place(x=70, y=157)
+spin.set(1)
 var = StringVar(window)
-'''spin2 = Spinbox(window, from_=-1, to=10, width=5, textvariable=var)
-spin2.place(x=245, y=167)
-spin2.configure(bg='white')'''
 spin2 = ttk.Combobox(window, width=4, textvariable=var)
 spin2['values']=(-1,0,1,2,3,4,5,6,7,8,9,10)
-spin2.place(x=245, y=167)
-#spin2.configure(bg='white')
-#spin3 = Spinbox(window, from_=0, to=6, width=5)
+spin2.place(x=245, y=157)
 var2 = StringVar(window)
 spin3 = ttk.Combobox(window, width=4, textvariable=var2)
 spin3['values']=(0,1,2,3,4,5,6)
@@ -1010,8 +1038,8 @@ output['state']='disabled'
 bar = Progressbar(window, length=290)
 bar.place(x=10, y=402)
 bar['value']=0
-chk1.select()
-
+chk6.state(['disabled'])
+#chk1_state.set(True)
 #显示窗口
 
 chkupdwindow = Toplevel(window)
@@ -1033,7 +1061,8 @@ except:
 chklbl1 = Label(chkupdwindow, text="正在检查是否有新版本…", justify="center")
 chklbl1.configure(bg='white')
 chklbl1.place(relx = 0.5, rely = 0.4, anchor = "center")
-_thread.start_new_thread(chkupd,())
+chkupdthread=threading.Thread(target=chkupd,args=())
+chkupdthread.start()
 #chkupdwindowIsOpen=True
 #chkupdwindowIsOpen=False
 
