@@ -1237,7 +1237,7 @@ def clicked10(btn):
     login1window.update()
 
 window = Tk()#初始化一个窗口
-window.title('B站动态抽奖工具 Python GUI版 '+version+' '+updatetime+' By: 芍芋')#标题
+window.title('B站动态抽奖工具 Python GUI版 '+version+' '+updatetime+' By: 芍芋 演示视频BV1bX4y137gF')#标题
 window.configure(bg='white')#背景颜色
 #window.geometry("820x300")
 
