@@ -3,30 +3,38 @@ from tkinter.ttk import Progressbar
 from tkinter import ttk
 from tkinter import scrolledtext
 from tkinter.filedialog import (askopenfilename,askopenfilenames,askdirectory,asksaveasfilename)
-import requests
+import requests #外置库
 import json
+import linecache
 import sys,os
 import time
 import math
-import re
+#import re
 import random
-import qrcode
+import qrcode #外置库
 import tkinter.messagebox
 from tkinter import ttk
 from datetime import datetime,timedelta
 import secrets
-import _thread
+#import _thread
 import threading
+import pyperclip
+#import windnd
 #from random import choice
 #from random import sample
 #上方代码导入所有需要的库
 
 import base64
 from iconwin import img
+import rc4
 #打包成exe所需的库
 
-version='1.0.5.006'
-updatetime='2021-03-26'
+version='1.1.0.008'
+updatetime='2021-03-31'
+
+class NullClass:
+    def is_alive(N):
+        return False
 
 def setIcon(win):
     #释放icon.py所保存的图标，打包exe时要用
@@ -50,6 +58,7 @@ def jsonDataToUrlParams(params_data):
         return url_str
     
 EnaRZ=False
+RZOFF=False
 def printp(text):
     #输出记录到文本框
     #print(text)
@@ -58,11 +67,16 @@ def printp(text):
     output['state']='disabled'
     output.see(END)
     window.update()
-    if EnaRZ:
+    if EnaRZ and not RZOFF:
         RZtxt = open(rzpath,'a',encoding='utf-8')
         RZtxt.write(text)
         RZtxt.write('\n')
         RZtxt.close()
+
+def outrb():
+    output['state']='normal'
+    output.delete('end - 2 lines','end - 1 lines')
+    output['state']='disabled'
 
 notime=True
 def nowtm():
@@ -74,6 +88,7 @@ def nowtm():
     else:
         return ''
 
+cjthread=NullClass()
 updinfo='(更新检测未完成)'
 def chkupd():
     global updinfo
@@ -102,12 +117,19 @@ def chkupd():
                 os.system('start '+gitreturn['html_url'])
             updinfo='有新版本可用！('+gitversion+' > '+version+')'
         else:
-            chklbl1.configure(text='恭喜~当前版本已是最新!')
+            try:
+                chklbl1.configure(text='恭喜~当前版本已是最新!')
+            except:
+                pass
             time.sleep(0.8)
             updinfo='当前版本已是最新！('+version+')'
-        printp(updinfo)
+        if not cjthread.is_alive():
+            printp(updinfo)
     except:
-        chklbl1.configure(text='检测更新时出现了问题!呜呜呜…')
+        try:
+            chklbl1.configure(text='检测更新时出现了问题!呜呜呜…')
+        except:
+            pass
         time.sleep(0.8)
         updinfo='检测更新时出现了问题……'
         #print('当前版本已是最新！')
@@ -123,6 +145,13 @@ def repBool(value):
         val=str(value).replace('True','√')#✔
     else:
         val=str(value).replace('False','X')#❌
+    return val
+
+def repBool2(value):
+    if value:
+        val=str(value).replace('True','显示')#✔
+    else:
+        val=str(value).replace('False','隐藏')#❌
     return val
 
 #传入链接，使用requests获取内容，允许超时3次
@@ -154,7 +183,9 @@ def _get_offset(data_json):
         return None
 
 def getZF(dyn_id):
+    global RZOFF
     printp('正在获取完整转发列表……')
+    RZOFF=True
     printp('Loading...')
     dynamic_api = "http://api.vc.bilibili.com/dynamic_repost/v1/dynamic_repost/repost_detail"
     info = {
@@ -187,11 +218,10 @@ def getZF(dyn_id):
                 try:
                     uid = data_json['data']['items'][i]['desc']['uid']
                     uidall.append(uid)
-                    output['state']='normal'
-                    output.delete('end - 2 lines','end - 1 lines')
-                    output['state']='disabled'
+                    outrb()
                     curusr=len(uidall)
                     percent='%.2f' % float(curusr/total_num*100)
+                    BarProgress(40+15*float(curusr/total_num))
                     printp(str(percent)+'% ('+str(curusr)+'/'+str(total_num)+')')
                 except:
                     pass
@@ -212,30 +242,42 @@ def getZF(dyn_id):
     output['state']='disabled'
     '''curusr=len(uidall)
     printp('100.00% ('+str(curusr)+'/'+str(curusr)+')')'''
+    RZOFF=False
     printp('完成，共有 '+str(len(uidall))+' 位，已存至列表中')
     return uidall
 
 def getPL(Dynamic_id):
     global notime
+    global RZOFF
     printp('正在获取完整评论列表……')
     current_page = 1
     header={
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/86.0.4324.182 Safari/537.36",
     }
     rid = dyinfo['card']['desc']['rid']
-    link1 = 'http://api.bilibili.com/x/v2/reply?&jsonp=jsonp&pn='
+    link1 = 'http://api.bilibili.com/x/v2/reply?&jsonp=json&pn='
     link2 = '&type=11&oid='
-    link3 = '&sort=2&_=1570498003332'
+    link3 = '&sort=2'#&_=1570498003332'
     comment_list = []
     userlist_1=[]
     pool = {}
     r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
     json_data = json.loads(r)
+    #print(json_data)
     if json_data['code']==-404:
-        notime=True
-        printp('获取评论失败,可能因为此动态没有除UP主自己的评论以外的评论呢')
-        notime=False
-        return False
+        outrb()
+        printp('正在获取完整评论列表……(模式二)')
+        rid=Dynamic_id
+        #print(rid)
+        link2 = '&type=17&oid='
+        r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
+        json_data = json.loads(r)
+        #print(json_data)
+        if json_data['code']==-404:
+            notime=True
+            printp('获取评论失败,可能因为此动态没有除UP主自己的评论以外的评论呢')
+            notime=False
+            return False
     if json_data['code']==-412:
         notime=True
         printp('获取评论失败，调取间隔过短，请过一段时间再试吧~')
@@ -243,19 +285,18 @@ def getPL(Dynamic_id):
         return False
     comments_num = json_data['data']['page']['count']
     pages_num = comments_num // 20 + 1
+    RZOFF=True
     printp('Loading...')
     while True:
         r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
         json_data1 = json.loads(r)
-
         if json_data1['data']['replies']:
             for reply in json_data1['data']['replies']:
                 userlist_1.append(int(reply['member']['mid']))
-                output['state']='normal'
-                output.delete('end - 2 lines','end - 1 lines')
-                output['state']='disabled'
+                outrb()
                 curusr=len(userlist_1)
                 percent='%.2f' % float(curusr/comments_num*100)
+                BarProgress(55+15*float(curusr/comments_num))
                 printp(str(percent)+'% ('+str(curusr)+'/'+str(comments_num)+')')
         current_page += 1
         if current_page > pages_num:
@@ -270,13 +311,16 @@ def getPL(Dynamic_id):
     output['state']='disabled'
     '''curusr=len(userlist_1)
     printp('100.00% ('+str(curusr)+'/'+str(curusr)+')')'''
+    RZOFF=False
     printp('完成，共有 '+str(len(userlist_1))+' 位，已存至列表中')
     return userlist_1
 
 def getDZ(dyid):
     global errortime
     global notime
+    global RZOFF
     printp('正在获取完整点赞列表……')
+    RZOFF=True
     printp('Loading...')
     header={
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
@@ -305,9 +349,7 @@ def getDZ(dyid):
             while times2<20:
                 userlist_1.append(jlist[times2].get('uid'))
                 times2=times2+1
-                output['state']='normal'
-                output.delete('end - 2 lines','end - 1 lines')
-                output['state']='disabled'
+                outrb()
                 curusr=len(userlist_1)
                 percent='%.2f' % float(curusr/likes*100)
                 printp(str(percent)+'% ('+str(curusr)+'/'+str(likes)+')')
@@ -315,12 +357,11 @@ def getDZ(dyid):
             while times2<20-math2:
                 userlist_1.append(jlist[times2].get('uid'))
                 times2=times2+1
-                output['state']='normal'
-                output.delete('end - 2 lines','end - 1 lines')
-                output['state']='disabled'
+                outrb()
                 curusr=len(userlist_1)
                 percent='%.2f' % float(curusr/likes*100)
                 printp(str(percent)+'% ('+str(curusr)+'/'+str(likes)+')')
+        BarProgress(70+15*float(curusr/likes))
         times=times+1
         time.sleep(0.3)
     userlist_1.sort()
@@ -332,12 +373,16 @@ def getDZ(dyid):
     output['state']='normal'
     output.delete('end - 2 lines','end - 1 lines')
     output['state']='disabled'
+    RZOFF=False
     printp('完成，共有 '+str(len(userlist_1))+' 位，已存至列表中')
     return list(userlist_1)
 
 def getname(users):
     #获取用户名
+    global ATuser
     times=0
+    if NEEDAT:
+        ATuser=[]
     while times<len(users):
         url='http://api.bilibili.com/x/space/acc/info?mid='+str(users[times])
         header={
@@ -348,12 +393,14 @@ def getname(users):
         usrinfo=resback.get('data')
         try:
             mid=usrinfo.get('mid')
-            uname=usrinfo.get('name')
+            uname=str(usrinfo.get('name'))
         except:
             #print(res.text)
             mid=(users[times])
             uname='[获取失败]'
         printp(str(times+1)+' '+uname+' (UID:'+str(mid)+')')
+        if NEEDAT:
+            ATuser.append('@'+uname)
         times=times+1
 
 def checkGZ(mid):
@@ -402,14 +449,8 @@ def checkCJH(mid,condition):
             times=0
             while times<check_count:
                 #print(rinfo['cards'][times]['card'])
-                dycontent=rinfo['cards'][times]['card']
-                cjkw1='抽' in dycontent and '奖' in dycontent
-                cjkw2='抽' in dycontent and '送' in dycontent
-                cjkw3='关' in dycontent and '转' in dycontent
-                cjkw4='转' in dycontent and '评' in dycontent
-                cjkw5='转' in dycontent and '留言' in dycontent
-                cjkwall=cjkw1 or cjkw2 or cjkw3 or cjkw4 or cjkw5
-                if cjkwall:
+                dycont=rinfo['cards'][times]['card']
+                if CHKCJDT(dycont):
                     raffle_count=raffle_count+1
                 times=times+1
         if raffle_count > condition:
@@ -463,34 +504,95 @@ def clicked():
     thread2.start()
 
 def checkthread(thread):
+    global notime
     while True:
         if not thread.is_alive():
             break
-        time.sleep(1)
+        time.sleep(0.1)
+    if not barval==100:
+        bar.stop()
+    bar['value']=barval
+    #bar['value']=100
+    barp.configure(text=str(int(bar['value']))+'%')
     btn['state']=NORMAL
     btn.configure(text="开始抽奖!",bg='deepskyblue')
 
+def BarProgress(num):
+    global barval
+    bar['value']=barval
+    while True:
+        #print(barval)
+        if bar['value']<num:
+            bar.start(2)
+        else:
+            bar.stop()
+            break
+        barp.configure(text=str(int(bar['value']))+'%')
+        time.sleep(0.01)
+        barval=bar['value']
+    bar['value']=barval
+
+def checkTJ(dycont):
+    ZF=''
+    PL=''
+    DZ=''
+    GZ=''
+    if '转' in dycont or '转发' in dycont:
+        ZF='转'
+    if '评' in dycont or '评论' in dycont or '留言' in dycont:
+        PL='评'
+    if '赞' in dycont or '点赞' in dycont:
+        DZ='赞'
+    if '关' in dycont or '关注' in dycont:
+        if not '关于' in dycont and '关注' in dycont:
+            GZ='关'
+    TJ='['+ZF+PL+DZ+GZ+']'
+    if CHKCJDT(dycont):
+        if not TJ=='[]':
+            return TJ+'(可能)'
+        else:
+            return '[未知]'
+    else:
+        return '(可能不是抽奖)'
+
+def CHKCJDT(dycont):
+    cjkw1='抽' in dycont and '奖' in dycont
+    cjkw2='抽' in dycont and '送' in dycont
+    cjkw3='关' in dycont and '转' in dycont
+    cjkw4='转' in dycont and '评' in dycont
+    cjkw5='转' in dycont and '留言' in dycont
+    cjkwall=cjkw1 or cjkw2 or cjkw3 or cjkw4 or cjkw5
+    return cjkwall
+
 def clicked0():
     #程序开始运行
-    bar['value']=0
     global notime
     global dyid
     global dyinfo
     global myuid
     global cookie
+    global cookiepath
     global TGZ
     global RZtxt
     global EnaRZ
+    global RZOFF
     global rzpath
     global GLCJH
     global GLlvl
+    global barval
+    bar['value']=0
+    barval=0
+    barp.configure(text='0%')
+    btn4.state(['disabled'])
     #print()
     TZF=bool(chk1_state.get())
     TPL=bool(chk2_state.get())
     TDZ=bool(chk3_state.get())
     TGZ=bool(chk4_state.get())
     TRZ=bool(chk5_state.get())
-    if chk6_state.get():
+    global NEEDAT
+    NEEDAT=bool(chk7_state.get())
+    if True:#chk6_state.get():
         output['state']='normal'
         output.delete(1.0, END)
         output['state']='disabled'
@@ -515,6 +617,7 @@ def clicked0():
     notime=False
     isLogin=False
     EnaRZ=False
+    RZOFF=False
     notime=True
     if not TGZ and not TZF and not TPL and not TDZ:
         tkinter.messagebox.showwarning("提示", '需要至少选中一个获奖条件呢！')
@@ -530,7 +633,7 @@ def clicked0():
         tkinter.messagebox.showwarning("提示",'输入的获奖者数量没有意义呢！')
         return False
     if HJNUM<1:
-        tkinter.messagebox.showwarning("提示",'输入的获奖者数量小于1，这是不想让任何小伙伴抽中？')
+        tkinter.messagebox.showwarning("提示",'输入的获奖者数量小于1，这是不想让小伙伴抽中？')
         return False
     try:
         HJlvl=int(spin3.get())
@@ -557,7 +660,11 @@ def clicked0():
     else:
         EnaRZ=False
     printp(updinfo)
-    bar['value']=10
+    #bar['value']=10
+    if not TGZ:
+        bar.start(2)
+        barval=0
+        BarProgress(10)
     TZF2=repBool(TZF)
     TPL2=repBool(TPL)
     TDZ2=repBool(TDZ)
@@ -576,18 +683,35 @@ def clicked0():
         try:
                 cook=open('cookie.txt','r')
                 cookie=cook.read()
+                cook.close()
+                cookiepath='cookie.txt'
         except:
             try:
                 cookiepath=askopenfilename(title='选择一个包含cookie的文本文件',initialdir=os.path.dirname(os.path.realpath(sys.argv[0])), filetypes=[('Cookie File','*.txt')])
                 cook=open(cookiepath,'r')
                 cookie=cook.read()
+                cook.close()
             except:
                 notime=True
                 printp('检测关注需要登录，请点击“登录/Cookie操作”按钮进行登录！')
                 #printp('假如还没有自己的cookie的话，可以运行附带的\ngetcookie.exe 或在浏览器打开 t.bili.fan 就能获取')
                 return False
+        bar.start(2)
+        barval=0
+        BarProgress(10)
+        cook=open(cookiepath,'r')
+        cookie=cook.read()
+        cook.close()
+        if 'ENCRYPTED\n' in cookie:
+            #decrycook(cookiepath)
+            notime=True
+            tkinter.messagebox.showwarning("提示",'需要解密cookie文件！')
+            printp('请将cookie文件解密后重试!')
+            decrycook(cookiepath)
+            return False
         notime=True
-        bar['value']=20
+        #bar['value']=20
+        BarProgress(20)
         printp('尝试使用预设的cookie进行模拟登录……')
         header={
         "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
@@ -601,14 +725,17 @@ def clicked0():
             name=jdata.get('name')
             level=jdata.get('level')
             coins=jdata.get('coins')
-            printp('模拟登录成功，UID:'+str(myuid)+'，详情如下\n用户名：'+name+'，等级 '+str(level)+'，拥有 '+str(coins)+' 枚硬币')
+            if DisplayLogInfo:
+                printp('模拟登录成功，UID:'+str(myuid)+'，详情如下\n用户名：'+name+'，等级 '+str(level)+'，拥有 '+str(coins)+' 枚硬币')
+            else:
+                printp('模拟登录成功，UID:'+str(myuid)+'，用户名：'+name)                
             isLogin=True
         except:
             printp('模拟登录失败，可能是cookie过期或未登录，请重新获取cookie!')
             return False
-
     #dyid=input('输入动态ID：')
-    bar['value']=30
+    #bar['value']=30
+    BarProgress(30)
     dyid=str(dyid)
     notime=False
     printp('正在获取动态详情……')
@@ -623,16 +750,24 @@ def clicked0():
         dyinfo=resback.get('data')
         if TGZ and dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')!=myuid:
             notime=True
-            printp('动态发送者（'+dyinfo.get('card').get('desc').get('user_profile').get('info').get('uname')+'）和当前已登录用户不一致!')
+            printp('动态发送者('+dyinfo.get('card').get('desc').get('user_profile').get('info').get('uname')+')和当前已登录用户不一致!')
             return False
         tmstmp=time.localtime(dyinfo.get('card').get('desc').get('timestamp'))
         notime=True
         printp('-------------------------------------------')
-        printp('动态发送者：'+str(dyinfo.get('card').get('desc').get('user_profile').get('info').get('uname'))+'\n浏览：'+str(dyinfo.get('card').get('desc').get('view'))+'，转发：'+str(dyinfo.get('card').get('desc').get('repost'))+'，评论：'+str(dyinfo.get('card').get('desc').get('comment'))+'，点赞：'+str(dyinfo.get('card').get('desc').get('like')))
+        printp('动态ID:'+dyid+' '+checkTJ(dyinfo['card']['card']))
+        printp('动态发送者：'+str(dyinfo['card']['desc']['user_profile']['info']['uname'])+'\n浏览：'+str(dyinfo['card']['desc']['view'])+'，转发：'+str(dyinfo['card']['desc']['repost'])+'，评论：'+str(dyinfo['card']['desc']['comment'])+'，点赞：'+str(dyinfo['card']['desc']['like']))
         printp('发送时间：'+time.strftime("%Y-%m-%d %H:%M:%S", tmstmp))
         printp('-------------------------------------------')
-        notime=False
+        #抽奖条件：'+str())+'|
         #print(dyinfo)
+        try:
+            lottdata=json.loads(dyinfo['card']['extension']['lott'])
+            printp('此动态已经存在官方抽奖功能!抽奖ID:'+str(lottdata['lottery_id']))
+            return False
+        except:
+            pass
+        notime=False
     except Exception as e:
         SHEXIT=False
         try:
@@ -643,18 +778,18 @@ def clicked0():
         if SHEXIT:
                 return False
         notime=True
-        printp('获取出错，可能是动态链接/ID输入有误，请检查\n详细信息如下：\n'+str(repr(e))+'\n获取到的信息：\n'+res.text)
+        printp('获取出错，可能是动态链接/ID输入有误，请检查\n详细报错如下：\n'+str(repr(e))+'\n获取到的信息：\n'+res.text)
         return False
     if not isLogin:
         myuid=dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')
     printp('准备开始抽取……\n(抽取时将自动过滤UP主自己和重复转发/评论的用户)')
-    bar['value']=40
+    #bar['value']=40
     notime=True
     if TZF and dyinfo['card']['desc']['repost']>575:
-        printp('警告：转发数量超过575的部分无法被统计!')
+        printp('警告：转发数量超过550的部分可能无法被完全统计!')
     printp('')
     Error=False
-    bar['value']=40
+    BarProgress(40)
     if TZF:
         if dyinfo['card']['desc']['repost']==0:
             printp('这条动态没有任何用户转发!')
@@ -689,7 +824,9 @@ def clicked0():
         return False
     LBALL=[]
     notime=False
+    #BarProgress(40)
     if TZF:
+        ZFp=15
         LBZF=getZF(dyid)
         try:
             if not LBZF:
@@ -700,8 +837,10 @@ def clicked0():
             LBALL=set(LBALL)&set(LBZF)
         else:
             LBALL=set(LBZF)
-    bar['value']=50
+    #bar['value']=50
+    BarProgress(55)
     if TPL:
+        PLp=15
         LBPL=getPL(dyid)
         try:
             if not LBPL:
@@ -712,8 +851,10 @@ def clicked0():
             LBALL=set(LBALL)&set(LBPL)
         else:
             LBALL=set(LBPL)
-    bar['value']=60
+    #bar['value']=60
+    BarProgress(70)
     if TDZ:
+        DZp=15
         LBDZ=getDZ(dyid)
         try:
             if not LBDZ:
@@ -724,17 +865,19 @@ def clicked0():
             LBALL=set(LBALL)&set(LBDZ)
         else:
             LBALL=set(LBDZ)
-    bar['value']=70
+    #bar['value']=70
+    BarProgress(85)
     notime=True
     printp('')
     notime=False
     printp('已获取到符合要求的参与者数量为：'+str(len(list(LBALL))))
     notime=True
     if HJNUM>len(list(LBALL)) or HJNUM<1:
-        printp('输入的获奖者数量（'+str(HJNUM)+'）超出范围!')
+        printp('输入的获奖者数量('+str(HJNUM)+')超出范围!')
         return False
     HJMD=[]
     times=1
+    lba=len(LBALL)
     while True:
         while True:
             if not len(LBALL) < HJNUM:
@@ -742,10 +885,12 @@ def clicked0():
                 if not HJuser in HJMD:
                     if checkGZ(HJuser) and checkCJH(HJuser,CJHnum) and checklvl(HJuser,HJlvl):
                         HJMD.append(HJuser)
+                        #LBALL.remove(HJuser)
+                        #printp('[抽到UID:'+str(HJuser)+']')
                         times=times+1
-                    else:
-                        LBALL.remove(HJuser)
-                        #print(len(LBALL))
+                    #else:
+                    LBALL.remove(HJuser)
+                    #print(len(LBALL))
                 break
             else:
                 printp('')
@@ -753,7 +898,13 @@ def clicked0():
                 return False
         if times>HJNUM:
             break
-    bar['value']=90
+        '''if len(HJMD)!=0:
+            BarProgress(85+13*len(HJMD)/HJNUM)'''
+        numz1=lba-len(LBALL)
+        numz2=numz1/lba
+        BarProgress(85+13*numz2)
+    #bar['value']=90
+    BarProgress(98)
     HJMD.sort()
     random.shuffle(HJMD)
     notime=False
@@ -762,10 +913,23 @@ def clicked0():
     printp('-------------------------------------------')
     getname(HJMD)
     printp('-------------------------------------------')
-    notime=False
     #printp('程序即将退出……')
-    bar['value']=100
-    return False
+    #bar['value']=100
+    btn4['state']=NORMAL
+    barval=100
+    if NEEDAT:
+        #print(ATuser)
+        ATmsg0=str(ATuser).replace('[','')
+        ATmsg1=ATmsg0.replace(']','')
+        ATmsg2=ATmsg1.replace(',',' ')
+        ATmsg3=ATmsg2.replace("'",'')
+        #print(ATmsg3)
+        ATmsg=ATmsg3
+        pyperclip.copy(ATmsg)
+        printp('已复制at信息，可直接粘贴到动态编辑框')
+    printp('提示:可以使用Win+Shift+S快速进行窗口截图')
+    notime=False
+    return True
 
 def clicked2():
     #关于窗口
@@ -778,8 +942,8 @@ def clicked3():
     login1window = Toplevel(window)
     login1window.title('登录/Cookie操作')
     login1window.configure(bg='white')
-    width = 300
-    heigh = 100
+    width = 270
+    heigh = 100#136
     screenwidth = login1window.winfo_screenwidth()
     screenheight = login1window.winfo_screenheight()-50
     login1window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
@@ -792,12 +956,18 @@ def clicked3():
         except:
             pass
     logbtn1 = ttk.Button(login1window, text="登录/获取Cookie", command=clicked4)
-    logbtn1.place(x=100, y=10)
-    #logbtn1.configure(bg='white')
+    logbtn1.place(x=10, y=12)
     logbtn2 = ttk.Button(login1window, text="退出登录/注销Cookie", command=clicked5)
-    logbtn2.place(x=87, y=50)
-    #logbtn2.configure(bg='white')
+    logbtn2.place(x=127, y=12)
+    logbtn3 = ttk.Button(login1window, text="   加密Cookie   ", command=clicked6)
+    logbtn3.place(x=10, y=52)
+    logbtn4 = ttk.Button(login1window, text="     "+repBool2(bool(1-DisplayLogInfo))+"登录细节     ", command=lambda:clicked10(logbtn4))#clicked10(loginlbl1))
+    logbtn4.place(x=127, y=52)
+    '''loginlbl1 = Label(login1window, text=repBool(DisplayLogInfo))
+    loginlbl1.configure(bg='white')
+    loginlbl1.place(x=255, y=53)'''
     login1window.lift()
+    login1window.grab_set()
     login1window.mainloop()
 
 def clicked4():
@@ -810,8 +980,6 @@ def clicked4():
     jdata = json_dict['data']
     oauthlink = jdata.get('url')
     oauthkey = jdata.get('oauthKey')
-    '''print('本次请求的oauthKey为：' + oauthkey)
-    print('使用B站客户端扫描弹出的二维码并确认登录后关闭该窗口')'''
     qr = qrcode.QRCode(version=5, error_correction=(qrcode.constants.ERROR_CORRECT_M), box_size=6, border=4)
     qr.add_data(oauthlink)
     qr.make(fit=True)
@@ -840,6 +1008,7 @@ def clicked4():
     #_thread.start_new_thread(chklog,(oauthkey,login2window))
     thread = threading.Thread(target=chklog,args=(oauthkey,login2window))
     thread.start()
+    login2window.grab_set()
     login2window.mainloop()
 
 def clicked5():
@@ -855,10 +1024,17 @@ def clicked5():
             cookiepath=askopenfilename(title='选择一个包含cookie的文本文件',initialdir=os.path.dirname(os.path.realpath(sys.argv[0])), filetypes=[('Cookie File','*.txt')])
         cook=open(cookiepath,'r')
         cookie=cook.read()
+        cook.close()
     except:
         tkinter.messagebox.showwarning("提示",'需要提供cookie才能注销掉呢……')
         return False
     #try:
+    if 'ENCRYPTED\n' in cookie:
+        #decrycook(cookiepath)
+        notime=True
+        tkinter.messagebox.showwarning("提示",'请先将cookie文件解密！')
+        decrycook(cookiepath)
+        return False
     cookies_dict={}
     cookies = cookie.split(";")
     for co in cookies:
@@ -896,6 +1072,115 @@ def clicked5():
         tkinter.messagebox.showwarning("提示",'注销cookie时出现其他错误！('+str(jdata['code'])+')')
         return False
 
+def clicked6():
+    global login3window
+    global txt2
+    global cookiez
+    global cookiepathz
+    login1window.destroy()
+    cookiepathz=''
+    try:
+        if os.path.exists('cookie.txt'):
+            cookiepathz='cookie.txt'
+        if cookiepathz=='':
+            cookiepathz=askopenfilename(title='选择一个包含cookie的文本文件',initialdir=os.path.dirname(os.path.realpath(sys.argv[0])), filetypes=[('Cookie File','*.txt')])
+        cook=open(cookiepathz,'r')
+        cookiez=cook.read()
+        cook.close()
+    except:
+        tkinter.messagebox.showwarning("提示",'需要提供cookie才能加密呢……')
+        return False
+    cook=open(cookiepathz,'r')
+    cookiez=cook.read()
+    cook.close()
+    if 'ENCRYPTED\n' in cookiez:
+        tkinter.messagebox.showwarning("提示",'这个cookie已经加密过了！')
+        return False
+    login3window = Toplevel(window)
+    login3window.title('输入加密用密码')
+    width = 280
+    heigh = 90
+    screenwidth = login3window.winfo_screenwidth()
+    screenheight = login3window.winfo_screenheight()-50
+    login3window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
+    login3window.resizable(0,0)
+    login3window.configure(bg='white')
+    try:
+        login3window.iconbitmap('icon.ico')
+    except:
+        try:
+            setIcon(login3window)
+        except:
+            pass
+    txt2 = ttk.Entry(login3window, width=36)
+    txt2.place(x=11, y=10)
+    btn = ttk.Button(login3window, text="确定", command=clicked7)
+    btn.place(x=96, y=50)
+    login3window.lift()
+    login3window.grab_set()
+    login3window.mainloop()
+
+def clicked7():
+    key=txt2.get()
+    #print(key)
+    if key=='':
+        key='Bili-Shoyu'
+    login3window.destroy()
+    ret=rc4.encrypt_str(cookiez,key)
+    #print(ret)
+    outtxt = open(cookiepathz, 'w')
+    outtxt.write('ENCRYPTED\n'+ret)
+    outtxt.close()
+    tkinter.messagebox.showinfo('提示','已将该cookie加密！')
+
+def decrycook(cookiepath):
+    global login4window
+    global cookiepathy
+    global txt3
+    cookiepathy=cookiepath
+    login4window = Toplevel(window)
+    login4window.title('输入解密用密码')
+    login4window.configure(bg='white')
+    width = 280
+    heigh = 90
+    screenwidth = login4window.winfo_screenwidth()
+    screenheight = login4window.winfo_screenheight()-50
+    login4window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
+    login4window.resizable(0,0)
+    #login4window.configure(bg='white')
+    try:
+        login4window.iconbitmap('icon.ico')
+    except:
+        try:
+            setIcon(login4window)
+        except:
+            pass
+    txt3 = ttk.Entry(login4window, width=36)
+    txt3.place(x=11, y=10)
+    btn = ttk.Button(login4window, text="确定", command=clicked8)
+    btn.place(x=96, y=50)
+    login4window.lift()
+    login4window.grab_set()
+    #login4window.mainloop()
+
+def clicked8():
+    key=txt3.get()
+    #print(key)
+    if key=='':
+        key='Bili-Shoyu'
+    login4window.destroy()
+    try:
+        ret=rc4.decrypt_str(linecache.getline(cookiepathy,2),key)
+        #print(ret)
+    except:
+        tkinter.messagebox.showwarning('提示','密码有误！')
+        return False
+    tkinter.messagebox.showiinfo('提示','已将该cookie解密！')
+    #IsSave=tkinter.messagebox.askyesno('提示','已将该cookie解密！是否需要保存？')
+    #if IsSave:
+    outtxt = open(cookiepathy, 'w')
+    outtxt.write(ret)
+    outtxt.close()
 
 def chklog(oauthkey,win):
     while True:
@@ -906,9 +1191,7 @@ def chklog(oauthkey,win):
             sessret=session.post(url, data)
             content=sessret.text
             json_dict = json.loads(content)
-            jdata = json_dict#['data']
-            #print(jdata['data'])
-            #login2window.title('1')
+            jdata = json_dict
             if jdata['data']==-5:
                 win.title('请在客户端确认登录！')
             elif jdata['data']==-2:
@@ -930,6 +1213,28 @@ def chklog(oauthkey,win):
         else:
             break
         time.sleep(3)
+
+'''def changelink(files):
+    txt.delete(0,END)
+    txt.insert(END,files)
+    print(files)'''
+
+def clicked9():
+    #print(output.get(1.0,END))
+    TimeSt=time.strftime("%Y-%m-%d-%H-%M-%S",time.localtime())
+    rzpath='抽奖记录'+TimeSt+'.txt'
+    RZtxt = open(rzpath,'a')
+    RZtxt.write(output.get(1.0,END))
+    RZtxt.close()
+    tkinter.messagebox.showinfo("提示",'抽奖记录已保存为：'+rzpath)
+
+def clicked10(btn):
+    global DisplayLogInfo
+    DisplayLogInfo=bool(1-DisplayLogInfo)
+    DPLI2=repBool2(DisplayLogInfo)
+    #tkinter.messagebox.showinfo("提示",'已切换为：'+DPLI2)
+    btn.configure(text='     '+repBool2(bool(1-DisplayLogInfo))+'登录细节     ')
+    login1window.update()
 
 window = Tk()#初始化一个窗口
 window.title('B站动态抽奖工具 Python GUI版 '+version+' '+updatetime+' By: 芍芋')#标题
@@ -960,7 +1265,7 @@ style.configure("cj.TButton", background="white",height=8,width=40)
 lbl1 = Label(window, text="在下方输入动态链接或者动态ID (使用Ctrl+V粘贴)")
 lbl1.place(x=10, y=10)
 lbl1.configure(bg='white')
-txt = ttk.Entry(window, width=40)#, relief="solid", highlightcolor='blue',highlightthickness=1)
+txt = ttk.Entry(window, width=40)
 txt.place(x=10, y=35)
 #txt.focus()
 lbl2 = Label(window, text="选择一下抽奖条件吧")
@@ -971,77 +1276,84 @@ chk1_state = BooleanVar()
 chk1_state.set(True) # Set check state
 chk1 = ttk.Checkbutton(window, text="转发", var=chk1_state)#, onvalue=1, offvalue=0)
 chk1.place(x=10, y=92)
-chk1.configure(style="TCheckbutton")
 chk2_state = BooleanVar()
 chk2_state.set(False) # Set check state
 chk2 = ttk.Checkbutton(window, text="评论", var=chk2_state)
 chk2.place(x=90, y=92)
-chk2.configure(style="TCheckbutton")
 chk3_state = BooleanVar()
 chk3_state.set(False) # Set check state
 chk3 = ttk.Checkbutton(window, text="点赞", var=chk3_state)
 chk3.place(x=170, y=92)
-chk3.configure(style="TCheckbutton")
 chk4_state = BooleanVar()
 chk4_state.set(False) # Set check state
 chk4 = ttk.Checkbutton(window, text="关注", var=chk4_state)
 chk4.place(x=250, y=92)
-chk4.configure(style="TCheckbutton")
-chk5_state = BooleanVar()
-chk5_state.set(False) # Set check state
-chk5 = ttk.Checkbutton(window, text="保存抽奖记录", var=chk5_state)
-chk5.place(x=10, y=297)
-chk5.configure(style="TCheckbutton")
-chk6_state = BooleanVar()
-chk6_state.set(True) # Set check state
-chk6 = ttk.Checkbutton(window, text="自动清空日志", var=chk6_state)
-chk6.place(x=10, y=257)
-chk6.configure(style="TCheckbutton")
-btn = Button(window, text="开始抽奖!", command=clicked)
-btn.place(x=10, y=340)
-btn.configure(bg='deepskyblue',height=2,width=40)
-btn2 = ttk.Button(window, text="关于本程序", command=clicked2)
-btn2.place(x=213, y=255)
-#btn2.configure(style="TButton")
-btn3 = ttk.Button(window, text="登录/Cookie操作", command=clicked3)
-btn3.place(x=196, y=295)
-#btn3.configure(style="TButton")
-lbl3 = Label(window, text="获奖人数")
-lbl3.place(x=10, y=155)
-lbl3.configure(bg='white')
-lbl4 = Label(window, text="过滤抽奖号(0-10)\n值越小越严格,-1=无")
-lbl4.place(x=133, y=147)
-lbl4.configure(bg='white')
-lbl5 = Label(window, text="注: 评论还没有支持获取楼中楼")#\n抽取时如果数据过多可能会出现无响应，耐心等待即可~")
-lbl5.place(x=10, y=116)
-lbl5.configure(bg='white')
-lbl6 = Label(window, text="最低等级\n(0-6)")
-lbl6.place(x=10, y=197)
-lbl6.configure(bg='white')
-spin = ttk.Spinbox(window, from_=1, to=999, width=5)
-spin.place(x=70, y=157)
-spin.set(1)
+spin = Spinbox(window, from_=1, to=999, width=5)
+spin.place(x=70, y=152)
+spin.configure(bg='white')
+#spin.set(1)
 var = StringVar(window)
 spin2 = ttk.Combobox(window, width=4, textvariable=var)
 spin2['values']=(-1,0,1,2,3,4,5,6,7,8,9,10)
-spin2.place(x=245, y=157)
+spin2.place(x=245, y=152)
 var2 = StringVar(window)
 spin3 = ttk.Combobox(window, width=4, textvariable=var2)
 spin3['values']=(0,1,2,3,4,5,6)
-spin3.place(x=70, y=207)
+spin3.place(x=70, y=194)
 spin2.current(0)
 spin3.current(0)
-#spin3.configure(bg='white')
+chk7_state = BooleanVar()
+chk7_state.set(True) # Set check state
+chk7 = ttk.Checkbutton(window, text="自动复制@信息", var=chk7_state)
+chk7.place(x=10, y=240)
+chk5_state = BooleanVar()
+chk5_state.set(False) # Set check state
+chk5 = ttk.Checkbutton(window, text="保存抽奖记录", var=chk5_state)
+chk5.place(x=10, y=265)
+'''chk6_state = BooleanVar()
+chk6_state.set(True) # Set check state
+chk6 = ttk.Checkbutton(window, text="自动清空记录", var=chk6_state)
+chk6.place(x=10, y=240)'''
+btn2 = ttk.Button(window, text="关于本程序", command=clicked2)
+btn2.place(x=213, y=253)
+#btn2.configure(style="TButton")
+btn4 = ttk.Button(window, text=" 保存当前记录 ", command=clicked9)
+btn4.place(x=10, y=295)
+btn3 = ttk.Button(window, text="登录/Cookie操作", command=clicked3)
+btn3.place(x=196, y=295)
+#btn3.configure(style="TButton")
+btn = Button(window, text="开始抽奖!", command=clicked)
+btn.place(x=10, y=340)
+btn.configure(bg='deepskyblue',height=2,width=40)
+lbl3 = Label(window, text="获奖人数")
+lbl3.place(x=10, y=150)
+lbl3.configure(bg='white')
+lbl4 = Label(window, text="过滤抽奖号(0-10)")
+lbl4.place(x=140, y=150)
+lbl4.configure(bg='white')
+lbl5 = Label(window, text="注: 评论获取不包括楼中楼")#\n抽取时如果数据过多可能会出现无响应，耐心等待即可~")
+lbl5.place(x=10, y=116)
+lbl5.configure(bg='white')
+lbl6 = Label(window, text="最低等级")#\n(0-6)")
+lbl6.place(x=10, y=193)
+lbl6.configure(bg='white')
+lbl7 = Label(window, text="值越小越严格,-1=无")
+lbl7.place(x=186, y=175)
+lbl7.configure(bg='white')
 output = scrolledtext.ScrolledText(window, width=48, height=31, relief="solid")
 output.place(x=315, y=17)
 output['state']='disabled'
-bar = Progressbar(window, length=290)
+bar = Progressbar(window, length=250)#290)
 bar.place(x=10, y=402)
 bar['value']=0
-chk6.state(['disabled'])
-#chk1_state.set(True)
+barp = Label(window, text="0%")
+barp.place(x=268, y=401)
+barp.configure(bg='white')
+btn4.state(['disabled'])
+#chk6.state(['disabled'])
 #显示窗口
 
+DisplayLogInfo=True
 chkupdwindow = Toplevel(window)
 chkupdwindow.title('检查更新')
 chkupdwindow.configure(bg='white')
@@ -1058,11 +1370,12 @@ except:
         setIcon(chkupdwindow)
     except:
         pass
-chklbl1 = Label(chkupdwindow, text="正在检查是否有新版本…", justify="center")
+chklbl1 = Label(chkupdwindow, text="正在获取版本信息…", justify="center")
 chklbl1.configure(bg='white')
 chklbl1.place(relx = 0.5, rely = 0.4, anchor = "center")
 chkupdthread=threading.Thread(target=chkupd,args=())
 chkupdthread.start()
+#windnd.hook_droptext(window, func=changelink)
 #chkupdwindowIsOpen=True
 #chkupdwindowIsOpen=False
 
