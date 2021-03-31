@@ -5,7 +5,7 @@
 
 最新版本（1.1.0）：
 
-![image](https://user-images.githubusercontent.com/75879378/113187586-9aca7100-928b-11eb-867c-9dc6201656de.png)
+![image](https://user-images.githubusercontent.com/75879378/113187997-17f5e600-928c-11eb-94a1-61d03f978f0f.png)
 
 旧版本（1.0.5）：
 
