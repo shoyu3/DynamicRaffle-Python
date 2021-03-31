@@ -1175,7 +1175,7 @@ def clicked8():
     except:
         tkinter.messagebox.showwarning('提示','密码有误！')
         return False
-    tkinter.messagebox.showiinfo('提示','已将该cookie解密！')
+    tkinter.messagebox.showinfo('提示','已将该cookie解密！')
     #IsSave=tkinter.messagebox.askyesno('提示','已将该cookie解密！是否需要保存？')
     #if IsSave:
     outtxt = open(cookiepathy, 'w')
