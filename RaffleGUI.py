@@ -30,7 +30,7 @@ import rc4
 #打包成exe所需的库
 
 version='1.1.0.008'
-updatetime='2021-03-31'
+updatetime='2021-04-01'
 
 class NullClass:
     def is_alive(N):
