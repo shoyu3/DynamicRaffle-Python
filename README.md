@@ -5,7 +5,7 @@
 [![Issue](https://img.shields.io/github/issues/shoyu3/DynamicRaffle-Python.svg?label=Issues)](https://github.com/shoyu3/DynamicRaffle-Python/issues)
 [![Language](https://img.shields.io/badge/%E8%AF%AD%E8%A8%80-%E4%B8%AD%E6%96%87-brightgreen.svg)](#)
 [![DevLanguage](https://img.shields.io/badge/%E5%BC%80%E5%8F%91%E8%AF%AD%E8%A8%80-Python-brightgreen.svg)](#)
-[![GitHub license](https://img.shields.io/github/license/shoyu3/DynamicRaffle-Python.svg?label=许可证)](https://github.com/shoyu3/DynamicRaffle/blob/master/LICENSE)
+[![GitHub license](https://img.shields.io/github/license/shoyu3/DynamicRaffle-Python.svg?label=许可证)](https://github.com/shoyu3/DynamicRaffle-Python/blob/master/LICENSE)
 
 
 ## 部分功能截图
