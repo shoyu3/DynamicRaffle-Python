@@ -901,8 +901,8 @@ def clicked0():
                         #LBALL.remove(HJuser)
                         #printp('[抽到UID:'+str(HJuser)+']')
                         times=times+1
-                    #else:
-                    LBALL.remove(HJuser)
+                    else:
+                        LBALL.remove(HJuser)
                     #print(len(LBALL))
                 break
             else:
