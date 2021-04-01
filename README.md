@@ -1,6 +1,13 @@
 # DynamicRaffle-Python
 哔哩哔哩动态抽奖工具，项目开始于2021年3月16日
 
+[![version](https://img.shields.io/github/v/release/shoyu3/DynamicRaffle-Python.svg?label=最新版本)](https://github.com/shoyu3/DynamicRaffle-Python/releases)
+[![Issue](https://img.shields.io/github/issues/shoyu3/DynamicRaffle-Python.svg?label=开放的Issue)](https://github.com/shoyu3/DynamicRaffle-Python/issues)
+[![Language](https://img.shields.io/badge/%E8%AF%AD%E8%A8%80-%E4%B8%AD%E6%96%87-brightgreen.svg)](#)
+[![DevLanguage](https://img.shields.io/badge/%E5%BC%80%E5%8F%91%E8%AF%AD%E8%A8%80-Python-brightgreen.svg)](#)
+[![GitHub license](https://img.shields.io/github/license/shoyu3/DynamicRaffle-Python.svg?label=许可证)](https://github.com/LeoChen98/BiliRaffle/blob/master/LICENSE)
+
+
 ## 部分功能截图
 
 最新版本（1.1.0）：
