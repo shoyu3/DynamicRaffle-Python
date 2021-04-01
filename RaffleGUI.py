@@ -29,7 +29,7 @@ from iconwin import img
 import rc4
 #打包成exe所需的库
 
-version='1.1.0.008'
+version='1.1.0.009'
 updatetime='2021-04-01'
 
 class NullClass:
@@ -118,7 +118,7 @@ def chkupd():
             updinfo='有新版本可用！('+gitversion+' > '+version+')'
         else:
             try:
-                chklbl1.configure(text='恭喜~当前版本已是最新!')
+                chklbl1.configure(text='当前版本已是最新！(~￣▽￣)~')#恭喜~
             except:
                 pass
             time.sleep(0.8)
@@ -127,13 +127,16 @@ def chkupd():
             printp(updinfo)
     except:
         try:
-            chklbl1.configure(text='检测更新时出现了问题!呜呜呜…')
+            chklbl1.configure(text='检测更新时出现了问题!呜呜呜…o(TヘTo)')
         except:
             pass
         time.sleep(0.8)
         updinfo='检测更新时出现了问题……'
+        printp(updinfo)
         #print('当前版本已是最新！')
     chkupdwindow.destroy()
+
+httpsession = requests.session()
 
 #下面1条def在获取数据时会用到，定义链接
 def likelisturl(page):
@@ -159,7 +162,7 @@ def gethtml(url, header):
     i = 0
     while i < 3:
         try:
-            html = requests.get(url, headers=header, timeout=5)
+            html = httpsession.get(url, headers=header, timeout=5)
             html.encoding = "utf-8"
             return html.text
         except requests.exceptions.RequestException:
@@ -207,11 +210,12 @@ def getZF(dyn_id):
     uidall=[]
     now_num = 0
     count = 0
-    users = []
+    #users = []
     while now_num < total_num:  # 循环获取页面
         param = {'dynamic_id': dyn_id, 'offset': offset}
-        data = requests.get(dynamic_api, headers=header, params=param, timeout=10)
+        data = httpsession.get(dynamic_api, headers=header, params=param)
         data_json = json.loads(data.text)
+        #print(len(str(data_json)))
         for i in range(0, 20):  # 获取单页的所有用户（最多20条）
             if count < total_num:
                 count += 1
@@ -231,7 +235,7 @@ def getZF(dyn_id):
         if offset is None:
             break
         now_num += 20
-        time.sleep(0.2)
+        time.sleep(0.1)
     uidall.sort()
     try:
         uidall.remove(myuid)
@@ -258,9 +262,9 @@ def getPL(Dynamic_id):
     link1 = 'http://api.bilibili.com/x/v2/reply?&jsonp=json&pn='
     link2 = '&type=11&oid='
     link3 = '&sort=2'#&_=1570498003332'
-    comment_list = []
+    #comment_list = []
     userlist_1=[]
-    pool = {}
+    #pool = {}
     r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
     json_data = json.loads(r)
     #print(json_data)
@@ -290,6 +294,7 @@ def getPL(Dynamic_id):
     while True:
         r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
         json_data1 = json.loads(r)
+        #print(len(str(json_data1)))
         if json_data1['data']['replies']:
             for reply in json_data1['data']['replies']:
                 userlist_1.append(int(reply['member']['mid']))
@@ -363,7 +368,7 @@ def getDZ(dyid):
                 printp(str(percent)+'% ('+str(curusr)+'/'+str(likes)+')')
         BarProgress(70+15*float(curusr/likes))
         times=times+1
-        time.sleep(0.3)
+        time.sleep(0.1)
     userlist_1.sort()
     try:
         userlist_1.remove(myuid)
@@ -553,7 +558,7 @@ def checkTJ(dycont):
         else:
             return '[未知]'
     else:
-        return '(可能不是抽奖)'
+        return '(可能不是抽奖动态)'
 
 def CHKCJDT(dycont):
     cjkw1='抽' in dycont and '奖' in dycont
@@ -561,7 +566,13 @@ def CHKCJDT(dycont):
     cjkw3='关' in dycont and '转' in dycont
     cjkw4='转' in dycont and '评' in dycont
     cjkw5='转' in dycont and '留言' in dycont
-    cjkwall=cjkw1 or cjkw2 or cjkw3 or cjkw4 or cjkw5
+    cjkw6='转' in dycont and '抽' in dycont
+    cjkw7='评' in dycont and '抽' in dycont
+    cjkw8='赞' in dycont and '抽' in dycont
+    cjkw9='转' in dycont and '送' in dycont
+    cjkw10='评' in dycont and '送' in dycont
+    cjkw11='赞' in dycont and '送' in dycont
+    cjkwall=cjkw1 or cjkw2 or cjkw3 or cjkw4 or cjkw5 or cjkw6 or cjkw7 or cjkw8 or cjkw9 or cjkw10 or cjkw11
     return cjkwall
 
 def clicked0():
@@ -633,7 +644,7 @@ def clicked0():
         tkinter.messagebox.showwarning("提示",'输入的获奖者数量没有意义呢！')
         return False
     if HJNUM<1:
-        tkinter.messagebox.showwarning("提示",'输入的获奖者数量小于1，这是不想让小伙伴抽中？')
+        tkinter.messagebox.showwarning("提示",'输入的获奖者数量小于1，这是不想让小伙伴们抽中？')
         return False
     try:
         HJlvl=int(spin3.get())
@@ -725,6 +736,7 @@ def clicked0():
             name=jdata.get('name')
             level=jdata.get('level')
             coins=jdata.get('coins')
+            outrb()
             if DisplayLogInfo:
                 printp('模拟登录成功，UID:'+str(myuid)+'，详情如下\n用户名：'+name+'，等级 '+str(level)+'，拥有 '+str(coins)+' 枚硬币')
             else:
@@ -778,7 +790,11 @@ def clicked0():
         if SHEXIT:
                 return False
         notime=True
-        printp('获取出错，可能是动态链接/ID输入有误，请检查\n详细报错如下：\n'+str(repr(e))+'\n获取到的信息：\n'+res.text)
+        printp('获取出错，可能是动态链接/ID输入有误，请检查\n详细报错如下：\n'+str(repr(e)))
+        try:
+            printp('获取到的信息：\n'+res.text)
+        except:
+            printp('(未接收到任何信息)')
         return False
     if not isLogin:
         myuid=dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')
@@ -826,7 +842,6 @@ def clicked0():
     notime=False
     #BarProgress(40)
     if TZF:
-        ZFp=15
         LBZF=getZF(dyid)
         try:
             if not LBZF:
@@ -840,7 +855,6 @@ def clicked0():
     #bar['value']=50
     BarProgress(55)
     if TPL:
-        PLp=15
         LBPL=getPL(dyid)
         try:
             if not LBPL:
@@ -854,7 +868,6 @@ def clicked0():
     #bar['value']=60
     BarProgress(70)
     if TDZ:
-        DZp=15
         LBDZ=getDZ(dyid)
         try:
             if not LBDZ:
@@ -1031,7 +1044,7 @@ def clicked5():
     #try:
     if 'ENCRYPTED\n' in cookie:
         #decrycook(cookiepath)
-        notime=True
+        #notime=True
         tkinter.messagebox.showwarning("提示",'请先将cookie文件解密！')
         decrycook(cookiepath)
         return False
@@ -1303,7 +1316,7 @@ spin3.place(x=70, y=194)
 spin2.current(0)
 spin3.current(0)
 chk7_state = BooleanVar()
-chk7_state.set(True) # Set check state
+chk7_state.set(False) # Set check state
 chk7 = ttk.Checkbutton(window, text="自动复制@信息", var=chk7_state)
 chk7.place(x=10, y=240)
 chk5_state = BooleanVar()
@@ -1370,7 +1383,7 @@ except:
         setIcon(chkupdwindow)
     except:
         pass
-chklbl1 = Label(chkupdwindow, text="正在获取版本信息…", justify="center")
+chklbl1 = Label(chkupdwindow, text="正在检查是否有新版本… (/ω＼*)\n（可忽略本窗口）", justify="center")
 chklbl1.configure(bg='white')
 chklbl1.place(relx = 0.5, rely = 0.4, anchor = "center")
 chkupdthread=threading.Thread(target=chkupd,args=())
