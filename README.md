@@ -26,7 +26,25 @@
 
 ## 如何使用
 
+Windows平台：
+
 前往[本项目最新的Release](https://github.com/shoyu3/DynamicRaffle-Python/releases/latest)，点击文件列表中的RaffleGUI.exe文件下载，双击运行
+
+Linux（Debian/Ubuntu/Deepin）平台：
+
+如果之前没有进行过相关配置，需要先在终端依次运行下列命令：（假如不是很确定直接运行也可以）
+
+```sh
+sudo apt update
+sudo apt upgrade
+sudo apt install python3-pip
+sudo apt install python3-tk
+pip3 install requests
+pip3 install qrcode
+pip3 install pyperclip
+```
+
+之后点击代码目录右上角的下载zip，解压，再在解压后的目录里输入```python3 RaffleGUI.py```并运行
 
 ## 关于关注检测
 
