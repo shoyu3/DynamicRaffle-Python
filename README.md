@@ -45,7 +45,7 @@ pip3 install qrcode
 pip3 install pyperclip
 ```
 
-之后点击代码目录右上角的下载zip，解压，再在解压后的目录里输入```python3 RaffleGUI.py```并运行
+之后点击代码目录右上角的下载zip，解压，再在解压后的目录里打开终端输入```python3 RaffleGUI.py```并运行
 
 ## 关于关注检测
 
