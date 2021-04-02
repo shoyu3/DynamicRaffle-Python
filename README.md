@@ -40,3 +40,4 @@
 - icon.ico 窗口图标
 - iconwin.py 包含窗口图标base64码的文件，打包exe需要使用
 - icopyspawn.py 将当前目录下的icon.ico转换生成iconwin.py，更新图标时需要使用
+- rc4.py 加密解密cookie需要使用
