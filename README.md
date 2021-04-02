@@ -14,6 +14,7 @@
 
 ![image](https://user-images.githubusercontent.com/75879378/113187997-17f5e600-928c-11eb-94a1-61d03f978f0f.png)
 
+<!--
 旧版本（1.0.5）：
 
 ![截图1](https://user-images.githubusercontent.com/75879378/112523063-4fbae480-8dd9-11eb-879b-3d9a4182fc12.png)
@@ -21,7 +22,7 @@
 某个旧版：
 
 ![截图2](https://user-images.githubusercontent.com/75879378/112303896-cd96c700-8cd7-11eb-9a5a-0de24521d512.png)
-
+-->
 部分实现方法源自项目：https://github.com/LeoChen98/BiliRaffle
 
 ## 如何使用
