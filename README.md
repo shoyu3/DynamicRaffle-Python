@@ -47,6 +47,18 @@ pip3 install pyperclip
 
 之后点击代码目录右上角的下载zip，解压，再在解压后的目录里打开终端输入```python3 RaffleGUI.py```并运行
 
+MacOS平台：
+
+下载python3安装包并安装（假设以前没有安装过，MacOS只自带了python2），在终端运行下面的命令：（如果提示找不到命令在每条的pip后面加一个3）
+
+```sh
+pip install requests
+pip3 install qrcode
+pip3 install pyperclip
+```
+
+之后点击代码目录右上角的下载zip，解压，再在解压后的目录里打开终端输入```python3 RaffleGUI.py```并运行
+
 ## 关于关注检测
 
 检测关注需要登录自己的B站账号，在最近的版本里已经整合进了getcookie.exe的功能，另外还增加了注销cookie的选项，可以快速注销此次登录
