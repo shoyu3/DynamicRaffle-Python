@@ -27,9 +27,42 @@
 
 ## 如何使用
 
-Windows平台：
+Windows平台（win10/win8）：
 
 前往[本项目最新的Release](https://github.com/shoyu3/DynamicRaffle-Python/releases/latest)，点击文件列表中的RaffleGUI.exe文件下载，双击运行
+
+Windows平台（win7）：
+
+下载python3安装包并安装（假设以前没有安装过，不能安装最新的3.9，推荐安装3.8），完成后在命令提示符（CMD）运行下面的命令：
+
+```sh
+pip install requests
+pip install qrcode
+pip install pyperclip
+```
+
+之后点击代码目录右上角的下载zip，解压，再在解压后的目录里按住```Shift```右键打开命令提示符输入```python RaffleGUI.py```并运行，或右键RaffleGUI.py，在菜单中选择“Edit with IDLE”，待窗口弹出后按键盘上的```F5```运行
+
+Windows平台（XP/Vista）：
+
+下载python3安装包并安装（假设以前没有安装过，不能安装3.5及以后的版本，推荐安装34），完成后在命令提示符（CMD）运行下面的命令：
+
+```sh
+pip install requests
+```
+
+之后点击代码目录右上角的下载zip，解压，由于本程序用到的部分库不支持python低版本，所以需要手动修改部分代码
+
+右键RaffleGUI.py，在菜单中选择“Edit with IDLE”，待窗口弹出后在开头的以下两行代码前加“#”或直接删除对应代码：
+
+```python
+import qrcode
+import pyperclip
+```
+
+修改完成后保存文件，按键盘上的```F5```运行
+
+注意：按照此教程做完后，扫码登录和自动复制@信息两个功能将失效，其他功能不受影响
 
 Linux（Debian/Ubuntu/Deepin）平台：
 
@@ -49,15 +82,29 @@ pip3 install pyperclip
 
 MacOS平台：
 
-下载python3安装包并安装（假设以前没有安装过，MacOS只自带了python2），在终端运行下面的命令：（如果提示找不到命令在每条的pip后面加一个3）
+下载python3安装包并安装（假设以前没有安装过，MacOS只自带了python2），完成后在终端运行下面的命令：（如果提示找不到命令在每条的pip后面加一个3）
 
-```sh
+```shell
 pip install requests
-pip3 install qrcode
-pip3 install pyperclip
+pip install qrcode
+pip install pyperclip
 ```
 
 之后点击代码目录右上角的下载zip，解压，再在解压后的目录里打开终端输入```python3 RaffleGUI.py```并运行
+
+Android平台（需要手机屏幕分辨率为1080P及以上）：
+
+在手机上下载并安装Pydroid3，打开，在侧边栏选择“终端”，输入下面的命令并运行：
+
+```shell
+pip install requests
+pip install qrcode
+pip install pyperclip
+```
+
+之后点击代码目录右上角的下载zip，解压到手机的任一目录，在Pydroid3中打开该目录下的RaffleGUIforPydroid.py，点击右下角悬浮按钮运行
+
+注：安卓版可以直接在输入框粘贴从B站客户端里分享复制的b23.tv短链，但自动复制@信息功能不可用
 
 ## 关于关注检测
 
