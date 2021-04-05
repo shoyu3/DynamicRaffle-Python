@@ -84,7 +84,7 @@ pip3 install Image
 
 **MacOS平台：**
 
-下载python3安装包并安装（假设以前没有安装过，MacOS只自带了python2），完成后在终端运行下面的命令：（如果提示找不到命令在每条的pip后面加一个3）
+下载python3安装包并安装（假设以前没有安装过，MacOS只自带了python2），完成后在终端运行下面的命令：<!--（如果提示找不到命令在每条的pip后面加一个3）-->
 
 ```shell
 pip3 install requests
