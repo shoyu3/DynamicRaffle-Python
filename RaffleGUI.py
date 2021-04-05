@@ -29,8 +29,8 @@ from iconwin import img
 import rc4
 #打包成exe所需的库
 
-version='1.1.0.009'
-updatetime='2021-04-01'
+version='1.1.2.011'
+updatetime='2021-04-04'
 
 class NullClass:
     def is_alive(N):
@@ -201,7 +201,7 @@ def getZF(dyn_id):
     # 首次数据获取
     offset = "1:0"
     param = {'dynamic_id': dyn_id, 'offset': offset}
-    data = requests.get(dynamic_api, headers=header, params=param, timeout=10)
+    data = httpsession.get(dynamic_api, headers=header, params=param, timeout=10)
     data_json = json.loads(data.text)
     total_num = data_json['data']['total']
     info['total'] = total_num
@@ -235,19 +235,18 @@ def getZF(dyn_id):
         if offset is None:
             break
         now_num += 20
-        time.sleep(0.1)
+        time.sleep(0.5)
     uidall.sort()
     try:
         uidall.remove(myuid)
     except:
         pass
-    output['state']='normal'
-    output.delete('end - 2 lines','end - 1 lines')
-    output['state']='disabled'
+    outrb()
     '''curusr=len(uidall)
     printp('100.00% ('+str(curusr)+'/'+str(curusr)+')')'''
     RZOFF=False
-    printp('完成，共有 '+str(len(uidall))+' 位，已存至列表中')
+    uidall=list(set(uidall))
+    printp('完成，共收集到 '+str(len(uidall))+' 位用户')
     return uidall
 
 def getPL(Dynamic_id):
@@ -311,13 +310,17 @@ def getPL(Dynamic_id):
         userlist_1.remove(myuid)
     except:
         pass
-    output['state']='normal'
-    output.delete('end - 2 lines','end - 1 lines')
-    output['state']='disabled'
+    outrb()
     '''curusr=len(userlist_1)
     printp('100.00% ('+str(curusr)+'/'+str(curusr)+')')'''
     RZOFF=False
-    printp('完成，共有 '+str(len(userlist_1))+' 位，已存至列表中')
+    if len(userlist_1)==0:
+        notime=True
+        printp('获取评论为空,可能因为此动态没有除UP主自己的评论以外的评论呢')
+        notime=False
+        return False
+    userlist_1=list(set(userlist_1))
+    printp('完成，共收集到 '+str(len(userlist_1))+' 位用户')
     return userlist_1
 
 def getDZ(dyid):
@@ -375,11 +378,10 @@ def getDZ(dyid):
     except:
         pass
     notime=False
-    output['state']='normal'
-    output.delete('end - 2 lines','end - 1 lines')
-    output['state']='disabled'
+    outrb()
     RZOFF=False
-    printp('完成，共有 '+str(len(userlist_1))+' 位，已存至列表中')
+    userlist_1=list(set(userlist_1))
+    printp('完成，共收集到 '+str(len(userlist_1))+' 位用户')
     return list(userlist_1)
 
 def getname(users):
@@ -420,6 +422,12 @@ def checkGZ(mid):
         rinfo=resback.get('data')
         be_relation=rinfo['be_relation']['attribute']
         if not be_relation==2 and not be_relation==6:
+            if noDisplayUser1:
+                asterisknum=len(str(mid))-3
+                asterisks=''
+                for i in range(asterisknum):
+                    asterisks=asterisks+'*'
+                mid=str(mid)[-10:][:1]+asterisks+str(mid)[-10:][-2:]
             printp('[UID:'+str(mid)+' 未关注('+str(be_relation)+')，无效]')
             return False
         else:
@@ -459,6 +467,12 @@ def checkCJH(mid,condition):
                     raffle_count=raffle_count+1
                 times=times+1
         if raffle_count > condition:
+            if noDisplayUser1:
+                asterisknum=len(str(mid))-3
+                asterisks=''
+                for i in range(asterisknum):
+                    asterisks=asterisks+'*'
+                mid=str(mid)[-10:][:1]+asterisks+str(mid)[-10:][-2:]
             printp('[UID:'+str(mid)+' 判定为抽奖号('+str(raffle_count)+'/'+str(condition)+')，无效]')
             return False
         else:
@@ -482,6 +496,12 @@ def checklvl(mid, HJlvl):
             printp('获取UID:'+str(mid)+'的等级信息出错，请自行查看!')
             return True
         if usrlvl<HJlvl:
+            if noDisplayUser1:
+                asterisknum=len(str(mid))-3
+                asterisks=''
+                for i in range(asterisknum):
+                    asterisks=asterisks+'*'
+                mid=str(mid)[-10:][:1]+asterisks+str(mid)[-10:][-2:]
             printp('[UID:'+str(mid)+' 等级过低('+str(usrlvl)+'/'+str(HJlvl)+')，无效]')
             return False
         else:
@@ -591,6 +611,7 @@ def clicked0():
     global GLCJH
     global GLlvl
     global barval
+    global noDisplayUser1
     bar['value']=0
     barval=0
     barp.configure(text='0%')
@@ -630,6 +651,7 @@ def clicked0():
     EnaRZ=False
     RZOFF=False
     notime=True
+    noDisplayUser1=(chk8_state.get())
     if not TGZ and not TZF and not TPL and not TDZ:
         tkinter.messagebox.showwarning("提示", '需要至少选中一个获奖条件呢！')
         #printp()
@@ -730,19 +752,28 @@ def clicked0():
         }
         r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header).text
         userinfo_dict=json.loads(r)
+        #print(r)
         try:
             jdata=userinfo_dict['data']
             myuid=jdata.get('mid')
-            name=jdata.get('name')
+            name=str(jdata.get('name'))
             level=jdata.get('level')
             coins=jdata.get('coins')
+            needexp=str(jdata['level_exp']['next_exp']-jdata['level_exp']['current_exp'])
             outrb()
             if DisplayLogInfo:
-                printp('模拟登录成功，UID:'+str(myuid)+'，详情如下\n用户名：'+name+'，等级 '+str(level)+'，拥有 '+str(coins)+' 枚硬币')
+                printp('模拟登录成功，UID:'+str(myuid)+'，详情如下\n'+name+'，Lv'+str(level)+'，粉丝数 '+str(jdata['follower'])+'，拥有 '+str(coins)+' 枚硬币')#用户名：'+name+'，等级 '+str(level)+'，拥有 '+str(coins)+' 枚硬币')
+                #printp('模拟登录成功：'+name+'(UID:'+str(myuid)+')，详情如下\n'+'Lv'+str(level)+'(还需'+needexp+')，粉丝数 '+str(jdata['follower'])+'，拥有 '+str(coins)+' 枚硬币')#用户名：'+name+'，等级 '+str(level)+'，拥有 '+str(coins)+' 枚硬币')
             else:
-                printp('模拟登录成功，UID:'+str(myuid)+'，用户名：'+name)                
+                printp('模拟登录成功：'+name+'(UID:'+str(myuid)+')')#，用户名：')                
             isLogin=True
         except:
+            try:
+                if userinfo_dict['code']==-412:
+                    printp('模拟登录失败，请求间隔过短，请过一段时间后重试!')
+                    return False
+            except:
+                pass
             printp('模拟登录失败，可能是cookie过期或未登录，请重新获取cookie!')
             return False
     #dyid=input('输入动态ID：')
@@ -863,7 +894,7 @@ def clicked0():
             pass
         if len(LBALL)!=0:
             LBALL=set(LBALL)&set(LBPL)
-        else:
+        elif not TZF:
             LBALL=set(LBPL)
     #bar['value']=60
     BarProgress(70)
@@ -876,7 +907,7 @@ def clicked0():
             pass
         if len(LBALL)!=0:
             LBALL=set(LBALL)&set(LBDZ)
-        else:
+        elif not TZF and not TPL:
             LBALL=set(LBDZ)
     #bar['value']=70
     BarProgress(85)
@@ -891,6 +922,9 @@ def clicked0():
     HJMD=[]
     times=1
     lba=len(LBALL)
+    BarProgress(85)
+    #BarProgress(85)
+    #BarProgress(85)
     while True:
         while True:
             if not len(LBALL) < HJNUM:
@@ -904,6 +938,11 @@ def clicked0():
                     else:
                         LBALL.remove(HJuser)
                     #print(len(LBALL))
+                numz1=lba-len(LBALL)
+                numz2=numz1/lba
+                time.sleep(0.08)
+                BarProgress(85+13*numz2)
+                #print(bar['value'])
                 break
             else:
                 printp('')
@@ -913,16 +952,18 @@ def clicked0():
             break
         '''if len(HJMD)!=0:
             BarProgress(85+13*len(HJMD)/HJNUM)'''
-        numz1=lba-len(LBALL)
-        numz2=numz1/lba
-        BarProgress(85+13*numz2)
     #bar['value']=90
-    BarProgress(98)
+    #input('waiting...')
+    #BarProgress(98)
     HJMD.sort()
     random.shuffle(HJMD)
     notime=False
     printp('抽取完成！\n获奖名单：(以UID为准)')
     notime=True
+    bar['value']=98
+    barval=98
+    barp.configure(text='98%')
+    #BarProgress(90)
     printp('-------------------------------------------')
     getname(HJMD)
     printp('-------------------------------------------')
@@ -1312,9 +1353,13 @@ spin2.place(x=245, y=152)
 var2 = StringVar(window)
 spin3 = ttk.Combobox(window, width=4, textvariable=var2)
 spin3['values']=(0,1,2,3,4,5,6)
-spin3.place(x=70, y=194)
+spin3.place(x=70, y=184)
 spin2.current(0)
 spin3.current(0)
+chk8_state = BooleanVar()
+chk8_state.set(False) # Set check state
+chk8 = ttk.Checkbutton(window, text="屏蔽无关用户", var=chk8_state)
+chk8.place(x=10, y=215)
 chk7_state = BooleanVar()
 chk7_state.set(False) # Set check state
 chk7 = ttk.Checkbutton(window, text="自动复制@信息", var=chk7_state)
@@ -1348,7 +1393,7 @@ lbl5 = Label(window, text="注: 评论获取不包括楼中楼")#\n抽取时如�
 lbl5.place(x=10, y=116)
 lbl5.configure(bg='white')
 lbl6 = Label(window, text="最低等级")#\n(0-6)")
-lbl6.place(x=10, y=193)
+lbl6.place(x=10, y=183)
 lbl6.configure(bg='white')
 lbl7 = Label(window, text="值越小越严格,-1=无")
 lbl7.place(x=186, y=175)
@@ -1363,7 +1408,7 @@ barp = Label(window, text="0%")
 barp.place(x=268, y=401)
 barp.configure(bg='white')
 btn4.state(['disabled'])
-#chk6.state(['disabled'])
+chk5.state(['disabled'])
 #显示窗口
 
 DisplayLogInfo=True
