@@ -41,11 +41,11 @@ pip install qrcode
 pip install pyperclip
 ```
 
-之后点击代码目录右上角的下载zip，解压，再在解压后的目录里按住```Shift```右键打开命令提示符输入```python RaffleGUI.py```并运行，或右键RaffleGUI.py，在菜单中选择“Edit with IDLE”，待窗口弹出后按键盘上的```F5```运行
+之后点击代码目录右上角的下载zip，解压，再在解压后的目录里按住```Shift```右键打开命令提示符输入```py RaffleGUI.py```并运行，或右键RaffleGUI.py，在菜单中选择“Edit with IDLE”，待窗口弹出后按键盘上的```F5```运行
 
 **Windows平台（XP/Vista）：**
 
-下载python3安装包并安装（假设以前没有安装过，不能安装3.5及以后的版本，推荐安装34），完成后在命令提示符（CMD）运行下面的命令：
+下载python3安装包并安装（假设以前没有安装过，不能安装3.5及以后的版本，推荐安装3.4），完成后在命令提示符（CMD）运行下面的命令：
 
 ```sh
 pip install requests
@@ -76,6 +76,8 @@ sudo apt install python3-tk
 pip3 install requests
 pip3 install qrcode
 pip3 install pyperclip
+pip3 install Pillow
+pip3 install Image
 ```
 
 之后点击代码目录右上角的下载zip，解压，再在解压后的目录里打开终端输入```python3 RaffleGUI.py```并运行
@@ -85,9 +87,11 @@ pip3 install pyperclip
 下载python3安装包并安装（假设以前没有安装过，MacOS只自带了python2），完成后在终端运行下面的命令：（如果提示找不到命令在每条的pip后面加一个3）
 
 ```shell
-pip install requests
-pip install qrcode
-pip install pyperclip
+pip3 install requests
+pip3 install qrcode
+pip3 install pyperclip
+pip3 install Pillow
+pip3 install Image
 ```
 
 之后点击代码目录右上角的下载zip，解压，再在解压后的目录里打开终端输入```python3 RaffleGUI.py```并运行
