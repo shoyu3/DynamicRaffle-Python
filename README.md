@@ -31,14 +31,16 @@
 
 前往[本项目最新的Release](https://github.com/shoyu3/DynamicRaffle-Python/releases/latest)，点击文件列表中的RaffleGUI.exe文件下载，双击运行
 
-**Windows平台（win7）：**
+**Windows平台（win7，或无法直接运行exe的电脑）：**
 
 下载python3安装包并安装（假设以前没有安装过，不能安装最新的3.9，推荐安装3.8），完成后在命令提示符（CMD）运行下面的命令：
 
-```sh
+```bash
 pip install requests
 pip install qrcode
 pip install pyperclip
+pip install Pillow
+pip install Image
 ```
 
 之后点击代码目录右上角的下载zip，解压，再在解压后的目录里按住```Shift```右键打开命令提示符输入```py RaffleGUI.py```并运行，或右键RaffleGUI.py，在菜单中选择“Edit with IDLE”，待窗口弹出后按键盘上的```F5```运行
@@ -47,7 +49,7 @@ pip install pyperclip
 
 下载python3安装包并安装（假设以前没有安装过，不能安装3.5及以后的版本，推荐安装3.4），完成后在命令提示符（CMD）运行下面的命令：
 
-```sh
+```bash
 pip install requests
 ```
 
@@ -68,7 +70,7 @@ import pyperclip
 
 如果之前没有进行过相关配置，需要先在终端依次运行下列命令：（假如不是很确定直接运行也可以）
 
-```sh
+```bash
 sudo apt update
 sudo apt upgrade
 sudo apt install python3-pip
@@ -86,7 +88,7 @@ pip3 install Image
 
 下载python3安装包并安装（假设以前没有安装过，MacOS只自带了python2），完成后在终端运行下面的命令：<!--（如果提示找不到命令在每条的pip后面加一个3）-->
 
-```shell
+```bash
 pip3 install requests
 pip3 install qrcode
 pip3 install pyperclip
@@ -100,7 +102,7 @@ pip3 install Image
 
 在手机上下载并安装Pydroid3，打开，在侧边栏选择“终端”，输入下面的命令并运行：
 
-```shell
+```bash
 pip install requests
 pip install qrcode
 pip install pyperclip
