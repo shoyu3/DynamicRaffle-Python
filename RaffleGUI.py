@@ -29,8 +29,8 @@ from iconwin import img
 import rc4
 #打包成exe所需的库
 
-version='1.1.2.011'
-updatetime='2021-04-04'
+version='1.1.3.012'
+updatetime='2021-04-15'
 
 class NullClass:
     def is_alive(N):
@@ -420,7 +420,12 @@ def checkGZ(mid):
         res = requests.get(url=url,headers=header)
         resback=json.loads(res.text)
         rinfo=resback.get('data')
-        be_relation=rinfo['be_relation']['attribute']
+        try:
+            be_relation=rinfo['be_relation']['attribute']
+        except:
+            #print(res.text)
+            printp('获取UID:'+str(mid)+'的关注状态出错，请自行查看!')
+            return True
         if not be_relation==2 and not be_relation==6:
             if noDisplayUser1:
                 asterisknum=len(str(mid))-3
@@ -797,6 +802,7 @@ def clicked0():
             return False
         tmstmp=time.localtime(dyinfo.get('card').get('desc').get('timestamp'))
         notime=True
+        outrb()
         printp('-------------------------------------------')
         printp('动态ID:'+dyid+' '+checkTJ(dyinfo['card']['card']))
         printp('动态发送者：'+str(dyinfo['card']['desc']['user_profile']['info']['uname'])+'\n浏览：'+str(dyinfo['card']['desc']['view'])+'，转发：'+str(dyinfo['card']['desc']['repost'])+'，评论：'+str(dyinfo['card']['desc']['comment'])+'，点赞：'+str(dyinfo['card']['desc']['like']))
@@ -930,7 +936,7 @@ def clicked0():
             if not len(LBALL) < HJNUM:
                 HJuser=secrets.choice(list(LBALL))#这句是核心功能之一，随机从参与者数组里抽一位
                 if not HJuser in HJMD:
-                    if checkGZ(HJuser) and checkCJH(HJuser,CJHnum) and checklvl(HJuser,HJlvl):
+                    if checkGZ(HJuser) and checklvl(HJuser,HJlvl) and checkCJH(HJuser,CJHnum):
                         HJMD.append(HJuser)
                         #LBALL.remove(HJuser)
                         #printp('[抽到UID:'+str(HJuser)+']')
@@ -1015,7 +1021,7 @@ def clicked3():
     logbtn2.place(x=127, y=12)
     logbtn3 = ttk.Button(login1window, text="   加密Cookie   ", command=clicked6)
     logbtn3.place(x=10, y=52)
-    logbtn4 = ttk.Button(login1window, text="     "+repBool2(bool(1-DisplayLogInfo))+"登录细节     ", command=lambda:clicked10(logbtn4))#clicked10(loginlbl1))
+    logbtn4 = ttk.Button(login1window, text="    "+repBool2(bool(1-DisplayLogInfo))+"登录细节     ", command=lambda:clicked10(logbtn4))#clicked10(loginlbl1))
     logbtn4.place(x=127, y=52)
     '''loginlbl1 = Label(login1window, text=repBool(DisplayLogInfo))
     loginlbl1.configure(bg='white')
@@ -1287,16 +1293,16 @@ def clicked10(btn):
     DisplayLogInfo=bool(1-DisplayLogInfo)
     DPLI2=repBool2(DisplayLogInfo)
     #tkinter.messagebox.showinfo("提示",'已切换为：'+DPLI2)
-    btn.configure(text='     '+repBool2(bool(1-DisplayLogInfo))+'登录细节     ')
+    btn.configure(text='    '+repBool2(bool(1-DisplayLogInfo))+'登录细节     ')
     login1window.update()
 
 window = Tk()#初始化一个窗口
-window.title('B站动态抽奖工具 Python GUI版 '+version+' '+updatetime+' By: 芍芋 演示视频BV1bX4y137gF')#标题
+window.title('B站动态抽奖工具 Python GUI版 '+version+' '+updatetime+' By: 芍芋 演示视频BV1Jv411773K')#标题
 window.configure(bg='white')#背景颜色
 #window.geometry("820x300")
 
 #窗口居中实现
-width = 690 #720 Linux
+width = 685 #720 Linux
 heigh = 450 #530 Linux
 screenwidth = window.winfo_screenwidth()
 screenheight = window.winfo_screenheight()-50
