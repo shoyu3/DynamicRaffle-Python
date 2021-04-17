@@ -110,6 +110,8 @@ pip3 install Image
 pip install requests
 pip install qrcode
 pip install pyperclip
+pip install Pillow
+pip install Image
 ```
 
 之后点击代码目录右上角的下载zip，解压到手机的任一目录，在Pydroid3中打开该目录下的RaffleGUIforPydroid.py，点击右下角悬浮按钮运行
@@ -121,6 +123,10 @@ pip install pyperclip
 检测关注需要登录自己的B站账号，在最近的版本里已经整合进了getcookie.exe的功能，另外还增加了注销cookie的选项，可以快速注销此次登录
 
 芍芋建议如果不是很经常使用抽奖关注检测功能的话应该在使用完之后注销cookie，保护账号安全（当然就算不注销只要不对外泄露就不会出问题）
+
+## 赞助开发者
+
+富婆，饿饿，饭饭☞[前往爱发电](https://afdian.net/@shoyu)
 
 ## 源码目录
 
