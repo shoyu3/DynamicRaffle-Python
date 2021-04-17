@@ -1,9 +1,10 @@
-from tkinter import *
+import tkinter as tk
+#from tkinter import *
 from tkinter.ttk import Progressbar
 from tkinter import ttk
 from tkinter import scrolledtext
 from tkinter.filedialog import (askopenfilename,askopenfilenames,askdirectory,asksaveasfilename)
-import requests #外置库
+import requests #外置库 需要使用pip install requests安装
 import json
 import linecache
 import sys,os
@@ -11,14 +12,13 @@ import time
 import math
 import re
 import random
-import qrcode #外置库
+import qrcode #外置库 需要使用pip install qrcode,pip install Pillow和pip install Image安装，py3.4版本以下不支持
 import tkinter.messagebox
-from tkinter import ttk
 from datetime import datetime,timedelta
 import secrets
 #import _thread
 import threading
-import pyperclip
+import pyperclip #外置库 需要使用pip install pyperclip安装，py3.4版本以下不支持
 #import windnd
 #from random import choice
 #from random import sample
@@ -65,7 +65,7 @@ def printp(text):
     output['state']='normal'
     output.insert('end',nowtm()+str(text)+'\n')
     output['state']='disabled'
-    output.see(END)
+    output.see(tk.END)
     window.update()
     if EnaRZ and not RZOFF:
         RZtxt = open(rzpath,'a',encoding='utf-8')
@@ -536,7 +536,7 @@ def linktodyid(dyid):
         return dyid
 
 def clicked():
-    btn['state']=DISABLED
+    btn['state']=tk.DISABLED
     global cjthread
     btn.configure(text="进行中…",bg='ivory')
     cjthread=threading.Thread(target=clicked0,args=())
@@ -555,7 +555,7 @@ def checkthread(thread):
     bar['value']=barval
     #bar['value']=100
     barp.configure(text=str(int(bar['value']))+'%')
-    btn['state']=NORMAL
+    btn['state']=tk.NORMAL
     btn.configure(text="开始抽奖!",bg='deepskyblue')
 
 def BarProgress(num):
@@ -644,7 +644,7 @@ def clicked0():
     NEEDAT=bool(chk7_state.get())
     if True:#chk6_state.get():
         output['state']='normal'
-        output.delete(1.0, END)
+        output.delete(1.0, tk.END)
         output['state']='disabled'
     if txt.get()=='':
         tkinter.messagebox.showwarning("提示", '需要输入动态链接/ID的嗷！')
@@ -656,9 +656,21 @@ def clicked0():
         tkinter.messagebox.showwarning("提示", '输入的动态ID/链接不正确呢！')
         #printp('')
         return False
+    dyinfoo=''
     if len(str(dyid))<18:
-        tkinter.messagebox.showwarning("提示", '输入的动态ID长度不够呢 ('+str(len(str(dyid)))+'/'+'18) ！')
-        return False
+        try:
+            header={
+            "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+            }
+            url='https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?type=2&rid='+str(dyid)
+            res = requests.get(url=url,headers=header)
+            res.encoding='utf-8'
+            resback=json.loads(res.text)
+            dyinfoo=resback['data']['card']['desc']
+            #tkinter.messagebox.showinfo("提示", '已将相簿ID还原为动态ID，请再次开始抽奖！')
+        except:
+            tkinter.messagebox.showwarning("提示", '输入的动态ID长度不够呢 ('+str(len(str(dyid)))+'/'+'18) ！')
+            return False
     LBGZ=[]
     LBZF=[]
     LBPL=[]
@@ -798,6 +810,11 @@ def clicked0():
     #bar['value']=30
     BarProgress(30)
     dyid=str(dyid)
+    if not dyinfoo=='':
+        notime=True
+        changelink(dyinfoo['dynamic_id'])
+        printp('<将相簿ID('+str(dyid)+')转换为动态ID>')
+        dyid=str(dyinfoo['dynamic_id'])
     notime=False
     printp('正在获取动态详情……')
     try:
@@ -988,7 +1005,7 @@ def clicked0():
     printp('-------------------------------------------')
     #printp('程序即将退出……')
     #bar['value']=100
-    btn4['state']=NORMAL
+    btn4['state']=tk.NORMAL
     barval=100
     if NEEDAT:
         #print(ATuser)
@@ -1012,7 +1029,7 @@ def clicked3():
     global login1window
     global login2window
     global login3window
-    login1window = Toplevel(window)
+    login1window = tk.Toplevel(window)
     login1window.title('登录/Cookie操作')
     login1window.configure(bg='white')
     login1window.transient(window) 
@@ -1059,7 +1076,7 @@ def clicked4():
     qr.make(fit=True)
     img = qr.make_image()
     img.save('qrcode.png')
-    login2window = Toplevel(window)
+    login2window = tk.Toplevel(window)
     login2window.title('使用B站客户端扫描登录')
     width = 300
     heigh = 300
@@ -1076,8 +1093,8 @@ def clicked4():
             setIcon(login2window)
         except:
             pass
-    photo = PhotoImage(file='qrcode.png')
-    w = Label(login2window, image=photo)
+    photo = tk.PhotoImage(file='qrcode.png')
+    w = tk.Label(login2window, image=photo)
     w.pack()
     os.unlink('qrcode.png')
     #_thread.start_new_thread(chklog,(oauthkey,login2window))
@@ -1118,7 +1135,11 @@ def clicked5():
         value = co.replace(p[0]+'=', '').replace('"', '')
         cookies_dict[p[0]]=value
     #print(cookies_dict)
-    csrftoken=cookies_dict['bili_jct']
+    try:
+        csrftoken=cookies_dict['bili_jct']
+    except:
+        tkinter.messagebox.showwarning("提示",'指定的cookie无效！')
+        return False
     url="http://passport.bilibili.com/login/exit/v2"#+oauthkey
     data={
     "biliCSRF":csrftoken,
@@ -1171,7 +1192,7 @@ def clicked6():
     if 'ENCRYPTED\n' in cookiez:
         tkinter.messagebox.showwarning("提示",'这个cookie已经加密过了！')
         return False
-    login3window = Toplevel(window)
+    login3window = tk.Toplevel(window)
     login3window.title('输入加密用密码')
     width = 280
     heigh = 90
@@ -1214,7 +1235,7 @@ def decrycook(cookiepath):
     global cookiepathy
     global txt3
     cookiepathy=cookiepath
-    login4window = Toplevel(window)
+    login4window = tk.Toplevel(window)
     login4window.title('输入解密用密码')
     login4window.configure(bg='white')
     login4window.transient(window) 
@@ -1291,17 +1312,17 @@ def chklog(oauthkey,win):
             break
         time.sleep(3)
 
-'''def changelink(files):
-    txt.delete(0,END)
-    txt.insert(END,files)
-    print(files)'''
+def changelink(t):
+    txt.delete(0,tk.END)
+    txt.insert(tk.END,t)
+    #print(t)
 
 def clicked9():
     #print(output.get(1.0,END))
     TimeSt=time.strftime("%Y-%m-%d-%H-%M-%S",time.localtime())
     rzpath='抽奖记录'+TimeSt+'.txt'
     RZtxt = open(rzpath,'a')
-    RZtxt.write(output.get(1.0,END))
+    RZtxt.write(output.get(1.0,tk.END))
     RZtxt.close()
     tkinter.messagebox.showinfo("提示",'抽奖记录已保存为：'+rzpath)
 
@@ -1313,7 +1334,7 @@ def clicked10(btn):
     btn.configure(text='     '+repBool2(bool(1-DisplayLogInfo))+'登录细节      ')
     login1window.update()
 
-window = Tk()#初始化一个窗口
+window = tk.Tk()#初始化一个窗口
 window.title('B站动态抽奖工具 Python GUI版 '+version+' 演示视频av247587107')#标题 By: 芍芋 '+updatetime+' 
 window.configure(bg='white')#背景颜色
 #window.geometry("820x300")
@@ -1339,29 +1360,29 @@ style.configure("TCheckbutton", background="white")
 style.configure("cj.TButton", background="white",height=8,width=40)
 
 #定义文本
-lbl1 = Label(window, text="在下方输入动态链接或者动态ID (使用Ctrl+V粘贴)")
+lbl1 = tk.Label(window, text="在下方输入动态链接或者动态ID (使用Ctrl+V粘贴)")
 lbl1.place(x=10, y=10)
 lbl1.configure(bg='white')
 txt = ttk.Entry(window, width=40)
 txt.place(x=10, y=35)
 #txt.focus()
-lbl2 = Label(window, text="选择一下抽奖条件吧")
+lbl2 = tk.Label(window, text="选择一下抽奖条件吧")
 lbl2.place(x=10, y=70)
 lbl2.configure(bg='white')
 #定义复选框
-chk1_state = BooleanVar()
+chk1_state = tk.BooleanVar()
 chk1_state.set(True) # Set check state
 chk1 = ttk.Checkbutton(window, text="转发", var=chk1_state)#, onvalue=1, offvalue=0)
 chk1.place(x=10, y=92)
-chk2_state = BooleanVar()
+chk2_state = tk.BooleanVar()
 chk2_state.set(False) # Set check state
 chk2 = ttk.Checkbutton(window, text="评论", var=chk2_state)
 chk2.place(x=90, y=92)
-chk3_state = BooleanVar()
+chk3_state = tk.BooleanVar()
 chk3_state.set(False) # Set check state
 chk3 = ttk.Checkbutton(window, text="点赞", var=chk3_state)
 chk3.place(x=170, y=92)
-chk4_state = BooleanVar()
+chk4_state = tk.BooleanVar()
 chk4_state.set(False) # Set check state
 chk4 = ttk.Checkbutton(window, text="关注", var=chk4_state)
 chk4.place(x=250, y=92)
@@ -1369,24 +1390,24 @@ spin = ttk.Spinbox(window, from_=1, to=999, width=5)
 spin.place(x=70, y=153)
 #spin.configure(bg='white')
 spin.set(1)
-lbl7 = Label(window, text="←值越小越严格,-1=无")
+lbl7 = tk.Label(window, text="←值越小越严格,-1=无")
 lbl7.place(x=176, y=189)
 lbl7.configure(bg='white')
-var = StringVar(window)
+var = tk.StringVar(window)
 spin2 = ttk.Combobox(window, width=4, textvariable=var)
 spin2['values']=(-1,0,1,2,3,4,5,6,7,8,9,10)
 spin2.place(x=119, y=190)
-var2 = StringVar(window)
+var2 = tk.StringVar(window)
 spin3 = ttk.Combobox(window, width=4, textvariable=var2)
 spin3['values']=(0,1,2,3,4,5,6)
 spin3.place(x=245, y=152)
 spin2.current(0)
 spin3.current(0)
-chk8_state = BooleanVar()
+chk8_state = tk.BooleanVar()
 chk8_state.set(False) # Set check state
 chk8 = ttk.Checkbutton(window, text="屏蔽无关用户", var=chk8_state)
 chk8.place(x=10, y=230)
-chk7_state = BooleanVar()
+chk7_state = tk.BooleanVar()
 chk7_state.set(False) # Set check state
 chk7 = ttk.Checkbutton(window, text="自动复制@信息", var=chk7_state)
 chk7.place(x=10, y=260)
@@ -1406,19 +1427,19 @@ btn4.place(x=10, y=295)
 btn3 = ttk.Button(window, text="登录/Cookie操作", command=clicked3)
 btn3.place(x=196, y=295)
 #btn3.configure(style="TButton")
-btn = Button(window, text="开始抽奖!", command=clicked)
+btn = tk.Button(window, text="开始抽奖!", command=clicked)
 btn.place(x=10, y=340)
 btn.configure(bg='deepskyblue',height=2,width=40)
-lbl3 = Label(window, text="获奖人数")
+lbl3 = tk.Label(window, text="获奖人数")
 lbl3.place(x=10, y=152)
 lbl3.configure(bg='white')
-lbl4 = Label(window, text="过滤抽奖号(0-10)")
+lbl4 = tk.Label(window, text="过滤抽奖号(0-10)")
 lbl4.place(x=10, y=188)
 lbl4.configure(bg='white')
-lbl5 = Label(window, text="注: 评论获取不包括楼中楼")#\n抽取时如果数据过多可能会出现无响应，耐心等待即可~")
+lbl5 = tk.Label(window, text="注: 评论获取不包括楼中楼")#\n抽取时如果数据过多可能会出现无响应，耐心等待即可~")
 lbl5.place(x=10, y=115)
 lbl5.configure(bg='white')
-lbl6 = Label(window, text="获奖者最低等级")#\n(0-6)")
+lbl6 = tk.Label(window, text="获奖者最低等级")#\n(0-6)")
 lbl6.place(x=147, y=152)
 lbl6.configure(bg='white')
 output = scrolledtext.ScrolledText(window, width=48, height=31, relief="solid")
@@ -1427,7 +1448,7 @@ output['state']='disabled'
 bar = Progressbar(window, length=250)#290)
 bar.place(x=10, y=402)
 bar['value']=0
-barp = Label(window, text="0%")
+barp = tk.Label(window, text="0%")
 barp.place(x=268, y=401)
 barp.configure(bg='white')
 btn4.state(['disabled'])
@@ -1435,14 +1456,14 @@ btn4.state(['disabled'])
 #显示窗口
 
 DisplayLogInfo=True
-chkupdwindow = Toplevel(window)
+chkupdwindow = tk.Toplevel(window)
 chkupdwindow.title('检查更新')
 chkupdwindow.configure(bg='white')
 chkupdwindow.transient(window) 
 width = 300
 heigh = 100
 screenwidth = chkupdwindow.winfo_screenwidth()+285
-screenheight = chkupdwindow.winfo_screenheight()-10
+screenheight = chkupdwindow.winfo_screenheight()-50#+200
 chkupdwindow.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
 chkupdwindow.resizable(0,0)
 try:
@@ -1452,7 +1473,7 @@ except:
         setIcon(chkupdwindow)
     except:
         pass
-chklbl1 = Label(chkupdwindow, text="正在检查是否有新版本… (/ω＼*)\n（可忽略本窗口）", justify="center")
+chklbl1 = tk.Label(chkupdwindow, text="正在检查是否有新版本… (/ω＼*)\n（可忽略本窗口）", justify="center")
 chklbl1.configure(bg='white')
 chklbl1.place(relx = 0.5, rely = 0.4, anchor = "center")
 chkupdthread=threading.Thread(target=chkupd,args=())
