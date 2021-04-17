@@ -1441,8 +1441,8 @@ chkupdwindow.configure(bg='white')
 chkupdwindow.transient(window) 
 width = 300
 heigh = 100
-screenwidth = chkupdwindow.winfo_screenwidth()
-screenheight = chkupdwindow.winfo_screenheight()-50
+screenwidth = chkupdwindow.winfo_screenwidth()+285
+screenheight = chkupdwindow.winfo_screenheight()-10
 chkupdwindow.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
 chkupdwindow.resizable(0,0)
 try:
