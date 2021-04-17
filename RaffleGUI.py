@@ -29,8 +29,8 @@ from iconwin import img
 import rc4
 #打包成exe所需的库
 
-version='1.1.4.013'
-updatetime='2021-04-17'
+version='1.1.4.014'
+updatetime='2021-04-18'
 
 class NullClass:
     def is_alive(N):
@@ -236,7 +236,7 @@ def getZF(dyn_id):
             break
         now_num += 20
         time.sleep(0.5)
-    uidall=list(set(uidall_1))
+    uidall=list(set(uidall))
     uidall.sort()
     try:
         uidall.remove(myuid)
@@ -778,14 +778,14 @@ def clicked0():
         #bar['value']=20
         BarProgress(20)
         printp('尝试使用预设的cookie进行模拟登录……')
-        header={
-        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
-        "Cookie":cookie,
-        }
-        r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header).text
-        userinfo_dict=json.loads(r)
-        #print(r)
         try:
+            header={
+            "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+            "Cookie":cookie,
+            }
+            r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header).text
+            userinfo_dict=json.loads(r)
+            #print(r)
             jdata=userinfo_dict['data']
             myuid=jdata.get('mid')
             name=str(jdata.get('name'))
@@ -806,7 +806,7 @@ def clicked0():
                     return False
             except:
                 pass
-            printp('模拟登录失败，可能是cookie过期或未登录，请重新获取cookie!')
+            printp('模拟登录失败，可能是cookie无效，已过期或未登录，请重新获取cookie!')
             return False
     #dyid=input('输入动态ID：')
     #bar['value']=30
@@ -1025,7 +1025,7 @@ def clicked0():
 
 def clicked2():
     #关于窗口
-    tkinter.messagebox.showinfo("关于", 'B站动态抽奖工具 Python GUI版 '+version+'\n更新日期: '+updatetime+'\nBy: 芍芋\nWebsite: https://shoyu.top')
+    tkinter.messagebox.showinfo("关于", 'B站动态抽奖工具 Python GUI版 '+version+'\n更新日期: '+updatetime+'\nBy: 芍芋\nBlog: shoyu.top\nBili.fan首页: bili.fan\n赞助入口: afdian.net/@shoyu')
 
 def clicked3():
     global login1window
