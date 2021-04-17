@@ -630,6 +630,8 @@ def clicked0():
     global GLlvl
     global barval
     global noDisplayUser1
+    global RaffleBeginTime
+    RaffleBeginTime=time.localtime()
     bar['value']=0
     barval=0
     barp.configure(text='0%')
@@ -1319,9 +1321,9 @@ def changelink(t):
 
 def clicked9():
     #print(output.get(1.0,END))
-    TimeSt=time.strftime("%Y-%m-%d-%H-%M-%S",time.localtime())
+    TimeSt=time.strftime("%Y-%m-%d-%H-%M-%S",RaffleBeginTime)
     rzpath='抽奖记录'+TimeSt+'.txt'
-    RZtxt = open(rzpath,'a')
+    RZtxt = open(rzpath,'w')
     RZtxt.write(output.get(1.0,tk.END))
     RZtxt.close()
     tkinter.messagebox.showinfo("提示",'抽奖记录已保存为：'+rzpath)
@@ -1335,12 +1337,12 @@ def clicked10(btn):
     login1window.update()
 
 window = tk.Tk()#初始化一个窗口
-window.title('B站动态抽奖工具 Python GUI版 '+version+' 演示视频av247587107')#标题 By: 芍芋 '+updatetime+' 
+window.title('B站动态抽奖工具 Python GUI版 '+version+' 演示视频av247587107 按下F1可查看按键操作说明')#标题 By: 芍芋 '+updatetime+' 
 window.configure(bg='white')#背景颜色
 #window.geometry("820x300")
 
 #窗口居中实现
-width = 685 #720 Linux
+width = 700 #720 Linux
 heigh = 450 #530 Linux
 screenwidth = window.winfo_screenwidth()
 screenheight = window.winfo_screenheight()-50
@@ -1359,11 +1361,35 @@ style= ttk.Style()
 style.configure("TCheckbutton", background="white")
 style.configure("cj.TButton", background="white",height=8,width=40)
 
+def focto(obj):
+    obj.focus()
+    changelink(pyperclip.paste())
+
+def switch_to(status):
+    if status.get():
+        status.set(False)
+    else:
+        status.set(True)
+
+def pressbutton(command):
+    command()
+
+def pressbutton2(btnn,command):
+    #print(str(btnn.state())=="('disabled',)")
+    if not str(btnn.state())=="('disabled',)":
+        command()
+
+def clickedkeyhelp():
+    #按键操作帮助
+    tkinter.messagebox.showinfo("按键操作说明", 'F1 显示本说明\nF2 粘贴剪贴板内容到输入框\nF3 开始抽奖\nF5 切换转发开关\nF6 切换评论开关\nF7 切换点赞开关\nF8 切换关注开关\nF9 切换屏蔽无关用户开关\nF10 切换自动复制@信息开关\nF11 保存当前记录\nF12 登录\Cookie操作')
+
+
 #定义文本
 lbl1 = tk.Label(window, text="在下方输入动态链接或者动态ID (使用Ctrl+V粘贴)")
 lbl1.place(x=10, y=10)
 lbl1.configure(bg='white')
-txt = ttk.Entry(window, width=40)
+txt = ttk.Entry(window, width=43)
+txt.bind_all('<F2>', lambda a:focto(txt))
 txt.place(x=10, y=35)
 #txt.focus()
 lbl2 = tk.Label(window, text="选择一下抽奖条件吧")
@@ -1373,43 +1399,49 @@ lbl2.configure(bg='white')
 chk1_state = tk.BooleanVar()
 chk1_state.set(True) # Set check state
 chk1 = ttk.Checkbutton(window, text="转发", var=chk1_state)#, onvalue=1, offvalue=0)
+chk1.bind_all('<F5>', lambda a:switch_to(chk1_state))
 chk1.place(x=10, y=92)
 chk2_state = tk.BooleanVar()
 chk2_state.set(False) # Set check state
 chk2 = ttk.Checkbutton(window, text="评论", var=chk2_state)
-chk2.place(x=90, y=92)
+chk2.bind_all('<F6>', lambda a:switch_to(chk2_state))
+chk2.place(x=96.6, y=92)
 chk3_state = tk.BooleanVar()
 chk3_state.set(False) # Set check state
 chk3 = ttk.Checkbutton(window, text="点赞", var=chk3_state)
-chk3.place(x=170, y=92)
+chk3.bind_all('<F7>', lambda a:switch_to(chk3_state))
+chk3.place(x=183.2, y=92)
 chk4_state = tk.BooleanVar()
 chk4_state.set(False) # Set check state
 chk4 = ttk.Checkbutton(window, text="关注", var=chk4_state)
-chk4.place(x=250, y=92)
+chk4.bind_all('<F8>', lambda a:switch_to(chk4_state))
+chk4.place(x=270, y=92)
 spin = ttk.Spinbox(window, from_=1, to=999, width=5)
 spin.place(x=70, y=153)
 #spin.configure(bg='white')
 spin.set(1)
 lbl7 = tk.Label(window, text="←值越小越严格,-1=无")
-lbl7.place(x=176, y=189)
+lbl7.place(x=192, y=189)
 lbl7.configure(bg='white')
+var2 = tk.StringVar(window)
+spin3 = ttk.Combobox(window, width=4, textvariable=var2)
+spin3['values']=(0,1,2,3,4,5,6)
+spin3.place(x=262, y=152)
 var = tk.StringVar(window)
 spin2 = ttk.Combobox(window, width=4, textvariable=var)
 spin2['values']=(-1,0,1,2,3,4,5,6,7,8,9,10)
 spin2.place(x=119, y=190)
-var2 = tk.StringVar(window)
-spin3 = ttk.Combobox(window, width=4, textvariable=var2)
-spin3['values']=(0,1,2,3,4,5,6)
-spin3.place(x=245, y=152)
 spin2.current(0)
 spin3.current(0)
 chk8_state = tk.BooleanVar()
 chk8_state.set(False) # Set check state
 chk8 = ttk.Checkbutton(window, text="屏蔽无关用户", var=chk8_state)
+chk8.bind_all('<F9>', lambda a:switch_to(chk8_state))
 chk8.place(x=10, y=230)
 chk7_state = tk.BooleanVar()
 chk7_state.set(False) # Set check state
 chk7 = ttk.Checkbutton(window, text="自动复制@信息", var=chk7_state)
+chk7.bind_all('<F10>', lambda a:switch_to(chk7_state))
 chk7.place(x=10, y=260)
 '''chk5_state = BooleanVar()
 chk5_state.set(False) # Set check state
@@ -1419,17 +1451,21 @@ chk6_state = BooleanVar()
 chk6_state.set(True) # Set check state
 chk6 = ttk.Checkbutton(window, text="自动清空记录", var=chk6_state)
 chk6.place(x=10, y=240)'''
-btn2 = ttk.Button(window, text="关于本程序", command=clicked2)
-btn2.place(x=213, y=242)
-#btn2.configure(style="TButton")
 btn4 = ttk.Button(window, text=" 保存当前记录 ", command=clicked9)
+btn4.bind_all('<F11>', lambda a:pressbutton2(btn4,clicked9))
 btn4.place(x=10, y=295)
+btn2 = ttk.Button(window, text="关于本程序", command=clicked2)
+btn2.bind_all('<F1>', lambda a:pressbutton(clickedkeyhelp))
+btn2.place(x=228, y=242)
+#btn2.configure(style="TButton")
 btn3 = ttk.Button(window, text="登录/Cookie操作", command=clicked3)
-btn3.place(x=196, y=295)
+btn3.bind_all('<F12>', lambda a:pressbutton(clicked3))
+btn3.place(x=211, y=295)
 #btn3.configure(style="TButton")
 btn = tk.Button(window, text="开始抽奖!", command=clicked)
+btn.bind_all('<F3>', lambda a:pressbutton(clicked))
 btn.place(x=10, y=340)
-btn.configure(bg='deepskyblue',height=2,width=40)
+btn.configure(bg='deepskyblue',height=2,width=42)
 lbl3 = tk.Label(window, text="获奖人数")
 lbl3.place(x=10, y=152)
 lbl3.configure(bg='white')
@@ -1440,16 +1476,16 @@ lbl5 = tk.Label(window, text="注: 评论获取不包括楼中楼")#\n抽取时�
 lbl5.place(x=10, y=115)
 lbl5.configure(bg='white')
 lbl6 = tk.Label(window, text="获奖者最低等级")#\n(0-6)")
-lbl6.place(x=147, y=152)
+lbl6.place(x=164, y=152)
 lbl6.configure(bg='white')
 output = scrolledtext.ScrolledText(window, width=48, height=31, relief="solid")
-output.place(x=315, y=17)
+output.place(x=333, y=17)
 output['state']='disabled'
-bar = Progressbar(window, length=250)#290)
+bar = Progressbar(window, length=265)#290)
 bar.place(x=10, y=402)
 bar['value']=0
 barp = tk.Label(window, text="0%")
-barp.place(x=268, y=401)
+barp.place(x=283, y=401)
 barp.configure(bg='white')
 btn4.state(['disabled'])
 #chk5.state(['disabled'])
@@ -1462,7 +1498,7 @@ chkupdwindow.configure(bg='white')
 chkupdwindow.transient(window) 
 width = 300
 heigh = 100
-screenwidth = chkupdwindow.winfo_screenwidth()+285
+screenwidth = chkupdwindow.winfo_screenwidth()+300
 screenheight = chkupdwindow.winfo_screenheight()-50#+200
 chkupdwindow.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
 chkupdwindow.resizable(0,0)
