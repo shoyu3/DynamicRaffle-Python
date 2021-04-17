@@ -1430,7 +1430,7 @@ spin3.place(x=262, y=152)
 var = tk.StringVar(window)
 spin2 = ttk.Combobox(window, width=4, textvariable=var)
 spin2['values']=(-1,0,1,2,3,4,5,6,7,8,9,10)
-spin2.place(x=119, y=190)
+spin2.place(x=127, y=190)
 spin2.current(0)
 spin3.current(0)
 chk8_state = tk.BooleanVar()
@@ -1498,7 +1498,7 @@ chkupdwindow.configure(bg='white')
 chkupdwindow.transient(window) 
 width = 300
 heigh = 100
-screenwidth = chkupdwindow.winfo_screenwidth()+300
+screenwidth = chkupdwindow.winfo_screenwidth()+307
 screenheight = chkupdwindow.winfo_screenheight()-50#+200
 chkupdwindow.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
 chkupdwindow.resizable(0,0)
