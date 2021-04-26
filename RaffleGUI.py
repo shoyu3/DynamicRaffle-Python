@@ -31,7 +31,7 @@ except:
     pass
 #打包成exe所需的库
 
-version='1.1.5.015'
+version='1.1.6.016'
 updatetime='2021-04-26'
 
 class NullClass:
@@ -79,6 +79,10 @@ def outrb():
     output['state']='normal'
     output.delete('end - 2 lines','end - 1 lines')
     output['state']='disabled'
+
+def Merge(dict1, dict2):
+    res = {**dict1, **dict2}
+    return res
 
 notime=True
 def nowtm():
@@ -171,9 +175,9 @@ def gethtml(url, header):
             printp('警告：超时'+str(i+1)+'次，位于'+str(errortime)+'页')
             i += 1
 
-#===============================================================================================#
-#部分实现方法源自项目：https://github.com/LeoChen98/BiliRaffle，点赞判定为芍芋原创（反正很简单）#
-#===============================================================================================#
+#=============================================================#
+#部分代码思路来自项目：https://github.com/LeoChen98/BiliRaffle#
+#=============================================================#
 
 def now_time():
     #输出当前时间
@@ -209,7 +213,7 @@ def getZF(dyn_id):
     info['total'] = total_num
 
     # 获取全部数据
-    uidall=[]
+    uidall={}
     now_num = 0
     count = 0
     #users = []
@@ -218,12 +222,14 @@ def getZF(dyn_id):
         data = httpsession.get(dynamic_api, headers=header, params=param)
         data_json = json.loads(data.text)
         #print(len(str(data_json)))
+        #print(data_json['data']['items'][0]['desc']['user_profile']['info']['uname'])
         for i in range(0, 20):  # 获取单页的所有用户（最多20条）
             if count < total_num:
                 count += 1
                 try:
                     uid = data_json['data']['items'][i]['desc']['uid']
-                    uidall.append(uid)
+                    uname = data_json['data']['items'][i]['desc']['user_profile']['info']['uname']
+                    uidall[uid]=uname
                     outrb()
                     curusr=len(uidall)
                     percent='%.2f' % float(curusr/total_num*100)
@@ -238,17 +244,17 @@ def getZF(dyn_id):
             break
         now_num += 20
         time.sleep(0.5)
-    uidall=list(set(uidall))
-    uidall.sort()
+    #uidall=list(set(uidall))
+    #uidall.sort()
     try:
-        uidall.remove(myuid)
+        del uidall[myuid]
     except:
         pass
     outrb()
     '''curusr=len(uidall)
     printp('100.00% ('+str(curusr)+'/'+str(curusr)+')')'''
     RZOFF=False
-    uidall=list(set(uidall))
+    #uidall=list(set(uidall))
     printp('完成，共收集到 '+str(len(uidall))+' 位用户')
     return uidall
 
@@ -265,7 +271,7 @@ def getPL(Dynamic_id):
     link2 = '&type=11&oid='
     link3 = '&sort=2'#&_=1570498003332'
     #comment_list = []
-    userlist_1=[]
+    userlist_1={}
     #pool = {}
     r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
     json_data = json.loads(r)
@@ -299,7 +305,7 @@ def getPL(Dynamic_id):
         #print(len(str(json_data1)))
         if json_data1['data']['replies']:
             for reply in json_data1['data']['replies']:
-                userlist_1.append(int(reply['member']['mid']))
+                userlist_1[int(reply['member']['mid'])]=reply['member']['uname']
                 outrb()
                 curusr=len(userlist_1)
                 percent='%.2f' % float(curusr/comments_num*100)
@@ -308,10 +314,10 @@ def getPL(Dynamic_id):
         current_page += 1
         if current_page > pages_num:
             break
-    userlist_1=list(set(userlist_1))
-    userlist_1.sort()
+    #userlist_1=list(set(userlist_1))
+    #userlist_1.sort()
     try:
-        userlist_1.remove(myuid)
+        del userlist_1[myuid]
     except:
         pass
     outrb()
@@ -323,7 +329,7 @@ def getPL(Dynamic_id):
         printp('获取评论为空,可能因为此动态没有除UP主自己的评论以外的评论呢')
         notime=False
         return False
-    userlist_1=list(set(userlist_1))
+    #userlist_1=list(set(userlist_1))
     printp('完成，共收集到 '+str(len(userlist_1))+' 位用户')
     return userlist_1
 
@@ -347,7 +353,7 @@ def getDZ(dyid):
     pages=math.ceil(totalfans/20)
     times=1
     errortime=1
-    userlist_1=[]
+    userlist_1={}
     #notime=True
     likes=dyinfo['card']['desc']['like']
     while times < pages+1:
@@ -359,7 +365,7 @@ def getDZ(dyid):
         times2=0
         if times != pages:
             while times2<20:
-                userlist_1.append(jlist[times2].get('uid'))
+                userlist_1[jlist[times2]['uid']]=jlist[times2]['uname']
                 times2=times2+1
                 outrb()
                 curusr=len(userlist_1)
@@ -367,7 +373,7 @@ def getDZ(dyid):
                 printp(str(percent)+'% ('+str(curusr)+'/'+str(likes)+')')
         else:
             while times2<20-math2:
-                userlist_1.append(jlist[times2].get('uid'))
+                userlist_1[jlist[times2]['uid']]=jlist[times2]['uname']
                 times2=times2+1
                 outrb()
                 curusr=len(userlist_1)
@@ -376,20 +382,20 @@ def getDZ(dyid):
         BarProgress(70+15*float(curusr/likes))
         times=times+1
         time.sleep(0.1)
-    userlist_1=list(set(userlist_1))
-    userlist_1.sort()
+    #userlist_1=list(set(userlist_1))
+    #userlist_1.sort()
     try:
-        userlist_1.remove(myuid)
+        del userlist_1[myuid]
     except:
         pass
     notime=False
     outrb()
     RZOFF=False
-    userlist_1=list(set(userlist_1))
+    #userlist_1=list(set(userlist_1))
     printp('完成，共收集到 '+str(len(userlist_1))+' 位用户')
-    return list(userlist_1)
+    return userlist_1
 
-def getname(users):
+def getname_old(users):
     #获取用户名
     global ATuser
     times=0
@@ -414,6 +420,23 @@ def getname(users):
         if NEEDAT:
             ATuser.append('@'+uname)
         times=times+1
+
+def getname(users,userdict):
+    global ATuser
+    if NEEDAT:
+        ATuser=[]
+    '''userdict2={}
+    print(userdict)
+    for j in range(len(userdict)):
+        print(userdict2,j)
+        userdict2[str(list(userdict.keys())[j])]=list(userdict.values())[j]'''
+    times=1
+    for i in users:
+        uname=userdict[i]
+        printp(str(times)+' '+uname+' (UID:'+str(i)+')')
+        if NEEDAT:
+            ATuser.append('@'+uname)
+        times+=1
 
 def checkGZ(mid):
     if TGZ:
@@ -910,45 +933,55 @@ def clicked0():
     if Error:
         return False
     LBALL=[]
+    LBALL2={}
     notime=False
     #BarProgress(40)
     if TZF:
-        LBZF=getZF(dyid)
+        LBZF2=getZF(dyid)
         try:
-            if not LBZF:
+            if not LBZF2:
                 return False
         except:
             pass
+        LBZF=list(LBZF2.keys())
         if len(LBALL)!=0:
             LBALL=set(LBALL)&set(LBZF)
+            LBALL2=Merge(LBALL2,LBZF2)
         else:
             LBALL=set(LBZF)
+            LBALL2=(LBZF2)
     #bar['value']=50
     BarProgress(55)
     if TPL:
-        LBPL=getPL(dyid)
+        LBPL2=getPL(dyid)
         try:
-            if not LBPL:
+            if not LBPL2:
                 return False
         except:
             pass
+        LBPL=list(LBPL2.keys())
         if len(LBALL)!=0:
             LBALL=set(LBALL)&set(LBPL)
+            LBALL2=Merge(LBALL2,LBPL2)
         elif not TZF:
             LBALL=set(LBPL)
+            LBALL2=LBPL2
     #bar['value']=60
     BarProgress(70)
     if TDZ:
-        LBDZ=getDZ(dyid)
+        LBDZ2=getDZ(dyid)
         try:
-            if not LBDZ:
+            if not LBDZ2:
                 return False
         except:
             pass
+        LBDZ=list(LBDZ2.keys())
         if len(LBALL)!=0:
             LBALL=set(LBALL)&set(LBDZ)
+            LBALL2=Merge(LBALL2,LBDZ2)
         elif not TZF and not TPL:
             LBALL=set(LBDZ)
+            LBALL2=LBDZ2
     #bar['value']=70
     BarProgress(85)
     notime=True
@@ -969,6 +1002,7 @@ def clicked0():
         while True:
             if not len(LBALL) < HJNUM:
                 HJuser=secrets.choice(list(LBALL))#这句是核心功能之一，随机从参与者数组里抽一位
+                #print(HJuser)
                 if not HJuser in HJMD:
                     if checkGZ(HJuser) and checklvl(HJuser,HJlvl) and checkCJH(HJuser,CJHnum):
                         HJMD.append(HJuser)
@@ -980,7 +1014,7 @@ def clicked0():
                     #print(len(LBALL))
                 numz1=lba-len(LBALL)
                 numz2=numz1/lba
-                time.sleep(0.08)
+                time.sleep(0.01)
                 BarProgress(85+13*numz2)
                 #print(bar['value'])
                 break
@@ -1005,7 +1039,7 @@ def clicked0():
     barp.configure(text='98%')
     #BarProgress(90)
     printp('-------------------------------------------')
-    getname(HJMD)
+    getname(HJMD,LBALL2)
     printp('-------------------------------------------')
     #printp('程序即将退出……')
     #bar['value']=100
@@ -1346,7 +1380,7 @@ window.configure(bg='white')#背景颜色
 #窗口居中实现
 width = 723 #720 Linux
 heigh = 445 #530 Linux
-screenwidth = window.winfo_screenwidth()-50
+screenwidth = window.winfo_screenwidth()
 screenheight = window.winfo_screenheight()-50
 window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
 window.resizable(0,0)#设置禁止调整窗口大小
@@ -1500,7 +1534,7 @@ chkupdwindow.configure(bg='white')
 chkupdwindow.transient(window) 
 width = 300
 heigh = 100
-screenwidth = chkupdwindow.winfo_screenwidth()+257
+screenwidth = chkupdwindow.winfo_screenwidth()+306
 screenheight = chkupdwindow.winfo_screenheight()-50#+200
 chkupdwindow.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
 chkupdwindow.resizable(0,0)
