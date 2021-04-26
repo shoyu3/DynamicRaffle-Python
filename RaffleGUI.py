@@ -1,6 +1,5 @@
 import tkinter as tk
 #from tkinter import *
-from tkinter.ttk import Progressbar
 from tkinter import ttk
 from tkinter import scrolledtext
 from tkinter.filedialog import (askopenfilename,askopenfilenames,askdirectory,asksaveasfilename)
@@ -25,12 +24,15 @@ import pyperclip #外置库 需要使用pip install pyperclip安装，py3.4版�
 #上方代码导入所有需要的库
 
 import base64
-from iconwin import img
-import rc4
+try:
+    from iconwin import img
+    import rc4
+except:
+    pass
 #打包成exe所需的库
 
-version='1.1.4.014'
-updatetime='2021-04-18'
+version='1.1.5.015'
+updatetime='2021-04-26'
 
 class NullClass:
     def is_alive(N):
@@ -648,6 +650,7 @@ def clicked0():
         output['state']='normal'
         output.delete(1.0, tk.END)
         output['state']='disabled'
+    printp(updinfo)
     if txt.get()=='':
         tkinter.messagebox.showwarning("提示", '需要输入动态链接/ID的嗷！')
         return False
@@ -724,7 +727,6 @@ def clicked0():
         EnaRZ=True
     else:
         EnaRZ=False'''
-    printp(updinfo)
     #bar['value']=10
     if not TGZ:
         bar.start(2)
@@ -828,10 +830,6 @@ def clicked0():
         res.encoding='utf-8'
         resback=json.loads(res.text)
         dyinfo=resback.get('data')
-        if TGZ and dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')!=myuid:
-            notime=True
-            printp('动态发送者('+dyinfo.get('card').get('desc').get('user_profile').get('info').get('uname')+')和当前已登录用户不一致!')
-            return False
         tmstmp=time.localtime(dyinfo.get('card').get('desc').get('timestamp'))
         notime=True
         outrb()
@@ -842,6 +840,10 @@ def clicked0():
         printp('-------------------------------------------')
         #抽奖条件：'+str())+'|
         #print(dyinfo)
+        if TGZ and dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')!=myuid:
+            notime=True
+            printp('动态发送者('+dyinfo.get('card').get('desc').get('user_profile').get('info').get('uname')+')和当前已登录用户不一致!')
+            return False
         try:
             lottdata=json.loads(dyinfo['card']['extension']['lott'])
             printp('此动态已经存在官方抽奖功能!抽奖ID:'+str(lottdata['lottery_id']))
@@ -880,7 +882,7 @@ def clicked0():
             printp('这条动态没有任何用户转发!')
             Error=True
         if dyinfo['card']['desc']['repost']>600:
-            printp('转发限制在600次以内!')
+            printp('转发限制在600次以内!(如超出建议改抽评论)')
             Error=True
         if HJNUM>dyinfo['card']['desc']['repost']:
             printp('设置的获奖者总数大于这条动态的转发数!')
@@ -889,8 +891,8 @@ def clicked0():
         if dyinfo['card']['desc']['comment']==0:
             printp('这条动态没有任何用户评论!')
             Error=True
-        if dyinfo['card']['desc']['comment']>1000:
-            printp('评论限制在1000条以内!')
+        if dyinfo['card']['desc']['comment']>20000:
+            printp('评论限制在20000条以内!')
             Error=True
         if HJNUM>dyinfo['card']['desc']['comment']:
             printp('设置的获奖者总数大于这条动态的评论数!')
@@ -899,8 +901,8 @@ def clicked0():
         if dyinfo['card']['desc']['like']==0:
             printp('这条动态没有任何用户点赞!')
             Error=True
-        if dyinfo['card']['desc']['like']>2000:
-            printp('点赞限制在2000个以内!')
+        if dyinfo['card']['desc']['like']>50000:
+            printp('点赞限制在50000个以内!')
             Error=True
         if HJNUM>dyinfo['card']['desc']['like']:
             printp('设置的获奖者总数大于这条动态的点赞数!')
@@ -1018,8 +1020,8 @@ def clicked0():
         #print(ATmsg3)
         ATmsg=ATmsg3
         pyperclip.copy(ATmsg)
-        printp('已复制at信息，可直接粘贴到动态编辑框')
-    printp('提示:可以使用Win+Shift+S快速进行窗口截图')
+        printp('已复制获奖者用户名，可直接粘贴到动态编辑框')
+    printp('提示：可以使用 Win+Shift+S 快速进行窗口截图')
     notime=False
     return True
 
@@ -1342,9 +1344,9 @@ window.configure(bg='white')#背景颜色
 #window.geometry("820x300")
 
 #窗口居中实现
-width = 700 #720 Linux
-heigh = 450 #530 Linux
-screenwidth = window.winfo_screenwidth()
+width = 723 #720 Linux
+heigh = 445 #530 Linux
+screenwidth = window.winfo_screenwidth()-50
 screenheight = window.winfo_screenheight()-50
 window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
 window.resizable(0,0)#设置禁止调整窗口大小
@@ -1381,7 +1383,7 @@ def pressbutton2(btnn,command):
 
 def clickedkeyhelp():
     #按键操作帮助
-    tkinter.messagebox.showinfo("按键操作说明", 'F1 显示本说明\nF2 粘贴剪贴板内容到输入框\nF3 开始抽奖\nF5 切换转发开关\nF6 切换评论开关\nF7 切换点赞开关\nF8 切换关注开关\nF9 切换屏蔽无关用户开关\nF10 切换自动复制@信息开关\nF11 保存当前记录\nF12 登录\Cookie操作')
+    tkinter.messagebox.showinfo("按键操作说明", 'F1 显示本说明\nF2 粘贴剪贴板内容到输入框\nF3 开始抽奖\nF5 切换转发开关\nF6 切换评论开关\nF7 切换点赞开关\nF8 切换关注开关\nF9 切换隐藏无效用户开关\nF10 切换自动复制用户名开关\nF11 保存当前记录\nF12 登录\Cookie操作')
 
 
 #定义文本
@@ -1417,12 +1419,12 @@ chk4 = ttk.Checkbutton(window, text="关注", var=chk4_state)
 chk4.bind_all('<F8>', lambda a:switch_to(chk4_state))
 chk4.place(x=270, y=92)
 spin = ttk.Spinbox(window, from_=1, to=999, width=5)
-spin.place(x=70, y=153)
+spin.place(x=69, y=153)
 #spin.configure(bg='white')
 spin.set(1)
-lbl7 = tk.Label(window, text="←值越小越严格,-1=无")
-lbl7.place(x=192, y=189)
-lbl7.configure(bg='white')
+#lbl7 = tk.Label(window, text="值越小越严格,-1=无☞")
+#lbl7.place(x=125, y=189)
+#lbl7.configure(bg='white')
 var2 = tk.StringVar(window)
 spin3 = ttk.Combobox(window, width=4, textvariable=var2)
 spin3['values']=(0,1,2,3,4,5,6)
@@ -1430,17 +1432,17 @@ spin3.place(x=262, y=152)
 var = tk.StringVar(window)
 spin2 = ttk.Combobox(window, width=4, textvariable=var)
 spin2['values']=(-1,0,1,2,3,4,5,6,7,8,9,10)
-spin2.place(x=127, y=190)
+spin2.place(x=262, y=190)
 spin2.current(0)
 spin3.current(0)
 chk8_state = tk.BooleanVar()
 chk8_state.set(False) # Set check state
-chk8 = ttk.Checkbutton(window, text="屏蔽无关用户", var=chk8_state)
+chk8 = ttk.Checkbutton(window, text="隐藏无效用户", var=chk8_state)
 chk8.bind_all('<F9>', lambda a:switch_to(chk8_state))
 chk8.place(x=10, y=230)
 chk7_state = tk.BooleanVar()
 chk7_state.set(False) # Set check state
-chk7 = ttk.Checkbutton(window, text="自动复制@信息", var=chk7_state)
+chk7 = ttk.Checkbutton(window, text="自动复制用户名", var=chk7_state)
 chk7.bind_all('<F10>', lambda a:switch_to(chk7_state))
 chk7.place(x=10, y=260)
 '''chk5_state = BooleanVar()
@@ -1469,19 +1471,19 @@ btn.configure(bg='deepskyblue',height=2,width=42)
 lbl3 = tk.Label(window, text="获奖人数")
 lbl3.place(x=10, y=152)
 lbl3.configure(bg='white')
-lbl4 = tk.Label(window, text="过滤抽奖号(0-10)")
-lbl4.place(x=10, y=188)
+lbl4 = tk.Label(window, text="过滤抽奖号(0-10)  [值越小越严格,-1=禁用]☞")
+lbl4.place(x=10, y=189)
 lbl4.configure(bg='white')
 lbl5 = tk.Label(window, text="注: 评论获取不包括楼中楼")#\n抽取时如果数据过多可能会出现无响应，耐心等待即可~")
 lbl5.place(x=10, y=115)
 lbl5.configure(bg='white')
 lbl6 = tk.Label(window, text="获奖者最低等级")#\n(0-6)")
-lbl6.place(x=164, y=152)
+lbl6.place(x=167, y=152)
 lbl6.configure(bg='white')
-output = scrolledtext.ScrolledText(window, width=48, height=31, relief="solid")
+output = scrolledtext.ScrolledText(window, width=51, height=31, relief="solid")
 output.place(x=333, y=17)
 output['state']='disabled'
-bar = Progressbar(window, length=265)#290)
+bar = ttk.Progressbar(window, length=265)#290)
 bar.place(x=10, y=402)
 bar['value']=0
 barp = tk.Label(window, text="0%")
@@ -1498,7 +1500,7 @@ chkupdwindow.configure(bg='white')
 chkupdwindow.transient(window) 
 width = 300
 heigh = 100
-screenwidth = chkupdwindow.winfo_screenwidth()+307
+screenwidth = chkupdwindow.winfo_screenwidth()+257
 screenheight = chkupdwindow.winfo_screenheight()-50#+200
 chkupdwindow.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
 chkupdwindow.resizable(0,0)
