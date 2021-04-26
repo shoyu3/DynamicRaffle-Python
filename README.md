@@ -7,6 +7,9 @@
 [![DevLanguage](https://img.shields.io/badge/%E5%BC%80%E5%8F%91%E8%AF%AD%E8%A8%80-Python-brightgreen.svg)](#)
 [![GitHub license](https://img.shields.io/github/license/shoyu3/DynamicRaffle-Python.svg?label=开源许可)](https://github.com/shoyu3/DynamicRaffle-Python/blob/master/LICENSE)
 
+## 使用前必看
+
+此工具无法突破B站对转发接口获取上限的限制（550条左右），因此将最高转发量设置为600，如想要抽奖的动态已经超出此指标，则建议改为在评论区抽
 
 ## 部分功能截图
 
@@ -68,7 +71,7 @@ import pyperclip
 
 修改完成后保存文件，按键盘上的```F5```运行
 
-注意：按照此教程做完后，扫码登录和自动复制@信息两个功能将失效，其他功能不受影响
+注意：按照此教程做完后，扫码登录和自动复制用户名两个功能将失效，其他功能不受影响
 
 **Linux（Debian/Ubuntu/Deepin）平台：**
 
@@ -116,17 +119,17 @@ pip install Image
 
 之后点击代码目录右上角的下载zip，解压到手机的任一目录，在Pydroid3中打开该目录下的RaffleGUIforPydroid.py，点击右下角悬浮按钮运行
 
-注：安卓版可以直接在输入框粘贴从B站客户端里分享复制的b23.tv短链，但自动复制@信息功能不可用
+注：安卓版可以直接在输入框粘贴从B站客户端里分享复制的b23.tv短链，但自动复制用户名功能不可用
 
 ## 关于关注检测
 
 检测关注需要登录自己的B站账号，在最近的版本里已经整合进了getcookie.exe的功能，另外还增加了注销cookie的选项，可以快速注销此次登录
 
-芍芋建议如果不是很经常使用抽奖关注检测功能的话应该在使用完之后注销cookie，保护账号安全（当然就算不注销只要不对外泄露就不会出问题）
+一般建议如果不是很经常使用抽奖关注检测功能的话应该在使用完之后注销cookie，保护账号安全（当然就算不注销只要不对外泄露就不会有风险）
 
 ## 赞助开发者
 
-富婆，饿饿，饭饭☞[前往爱发电](https://afdian.net/@shoyu)
+☞[前往爱发电](https://afdian.net/@shoyu)
 
 ## 源码目录
 
