@@ -70,7 +70,7 @@ import pyperclip
 
 **Linux（Debian/Ubuntu/Deepin）平台：**
 
-如果之前没有进行过相关配置，需要先在终端依次运行下列命令：（假如不是很确定直接运行也可以）
+如果之前没有进行过相关配置，需要先在终端（Terminal）依次运行下列命令：（假设已自带python3，如果不是很确定直接运行也可以）
 
 ```bash
 sudo apt update
@@ -84,11 +84,11 @@ pip3 install Pillow
 pip3 install Image
 ```
 
-之后点击代码目录右上角的下载zip，解压，再在解压后的目录里打开终端输入```python3 RaffleGUI.py```并运行
+之后点击代码目录右上角的下载zip，解压，并在解压后的目录里打开终端输入```python3 RaffleGUI.py```后运行
 
 **MacOS平台：**
 
-下载python3安装包并安装（假设以前没有安装过，MacOS只自带了python2），完成后在终端运行下面的命令：<!--（如果提示找不到命令在每条的pip后面加一个3）-->
+下载python3安装包并安装（假设以前没有安装过，MacOS只自带了python2），完成后在终端（Terminal）运行下面的命令：<!--（如果提示找不到命令在每条的pip后面加一个3）-->
 
 ```bash
 pip3 install requests
@@ -102,7 +102,7 @@ pip3 install Image
 
 **Android平台（需要手机屏幕分辨率为1080P及以上）：**
 
-在手机上下载并安装Pydroid3，打开，在侧边栏选择“终端”，输入下面的命令并运行：
+在手机上下载并安装Pydroid3，打开，在侧边栏选择“终端（Terminal）”，输入下面的命令并运行：
 
 ```bash
 pip install requests
@@ -114,13 +114,14 @@ pip install Image
 
 之后点击代码目录右上角的下载zip，解压到手机的任一目录，在Pydroid3中打开该目录下的RaffleGUIforPydroid.py，点击右下角悬浮按钮运行
 
-注：安卓版可以直接在输入框粘贴从B站客户端里分享复制的b23.tv短链，但自动复制用户名功能不可用
+注：安卓版可以直接在输入框粘贴从B站客户端分享页面复制的b23.tv短链，但因运行器限制自动复制用户名功能不可用（已屏蔽）
+注2：安卓版更新频率极低（没精力同时维护和测试），最新版本是1.1.1.010
 
 ## 关于关注检测
 
 检测关注需要登录自己的B站账号，在最近的版本里已经整合进了getcookie.exe的功能，另外还增加了注销cookie的选项，可以快速注销此次登录
 
-一般建议如果不是很经常使用抽奖关注检测功能的话应该在使用完之后注销cookie，保护账号安全（当然就算不注销只要不对外泄露就不会有风险）
+一般建议如果不是十分使用抽奖关注检测功能的话可以在使用完之后注销cookie，保护账号安全（当然就算不注销只要不对外泄露就不会有风险）
 
 ## 赞助开发者
 
@@ -129,6 +130,7 @@ pip install Image
 ## 源码目录
 
 - RaffleGUI.py 主程序
+- RaffleGUIforPydroid.py 安卓平台主程序
 - icon.ico 窗口图标
 - iconwin.py 包含窗口图标base64码的文件，打包exe需要使用
 - icopyspawn.py 将当前目录下的icon.ico转换生成iconwin.py，更新图标时需要使用
