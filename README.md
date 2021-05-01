@@ -11,23 +11,18 @@
 
 此工具无法突破B站对转发接口获取上限的限制（550条左右），因此将最高转发量设置为600，如想要抽奖的动态已经超出此指标，则建议改为在评论区抽
 
-## 部分功能截图
+## 工具截图
 
-最新版本（1.1.4）：
-
-![图片](https://user-images.githubusercontent.com/75879378/115114829-d4a5b200-9fc3-11eb-915e-d662a2c55319.png)
-
-旧版本（1.1.0）：
-
-![image](https://user-images.githubusercontent.com/75879378/113187997-17f5e600-928c-11eb-94a1-61d03f978f0f.png)
+![image](https://user-images.githubusercontent.com/75879378/116789074-ad7cd380-aadf-11eb-890c-37c57a7c3aea.png)
 
 <!--
+最新版本（1.1.4）：
+![图片](https://user-images.githubusercontent.com/75879378/115114829-d4a5b200-9fc3-11eb-915e-d662a2c55319.png)
+旧版本（1.1.0）：
+![image](https://user-images.githubusercontent.com/75879378/113187997-17f5e600-928c-11eb-94a1-61d03f978f0f.png)
 旧版本（1.0.5）：
-
 ![截图1](https://user-images.githubusercontent.com/75879378/112523063-4fbae480-8dd9-11eb-879b-3d9a4182fc12.png)
-
 某个旧版：
-
 ![截图2](https://user-images.githubusercontent.com/75879378/112303896-cd96c700-8cd7-11eb-9a5a-0de24521d512.png)
 -->
 部分实现方法和思路参考此项目：https://github.com/LeoChen98/BiliRaffle
