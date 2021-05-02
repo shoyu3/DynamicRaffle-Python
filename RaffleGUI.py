@@ -1,8 +1,7 @@
 import tkinter as tk
-#from tkinter import *
 from tkinter import ttk
 from tkinter import scrolledtext
-from tkinter.filedialog import (askopenfilename,askopenfilenames,askdirectory,asksaveasfilename)
+from tkinter.filedialog import (askopenfilename,askopenfilenames,asksaveasfilename)#askdirectory,
 import requests #外置库 需要使用pip install requests安装
 import json
 import linecache
@@ -11,16 +10,13 @@ import time
 import math
 import re
 import random
-import qrcode #外置库 需要使用pip install qrcode,pip install Pillow和pip install Image安装，py3.4版本以下不支持
+import qrcode #外置库 需要使用pip install qrcode,pip install Pillow和pip install Image安装，py3.4版本及以下不支持
 import tkinter.messagebox
 from datetime import datetime,timedelta
 import secrets
 #import _thread
 import threading
-import pyperclip #外置库 需要使用pip install pyperclip安装，py3.4版本以下不支持
-#import windnd
-#from random import choice
-#from random import sample
+import pyperclip #外置库 需要使用pip install pyperclip安装，py3.4版本及以下不支持
 #上方代码导入所有需要的库
 
 import base64
@@ -31,8 +27,8 @@ except:
     pass
 #打包成exe所需的库
 
-version='1.1.6.016'
-updatetime='2021-04-26'
+version='1.1.7.017'
+updatetime='2021-05-02'
 
 class NullClass:
     def is_alive(N):
@@ -124,7 +120,7 @@ def chkupd():
             updinfo='有新版本可用！('+gitversion+' > '+version+')'
         else:
             try:
-                chklbl1.configure(text='当前版本已是最新！(~￣▽￣)~')#恭喜~
+                chklbl1.configure(text='当前版本已是最新！(~￣▽￣)~')
             except:
                 pass
             time.sleep(0.8)
@@ -461,7 +457,7 @@ def checkGZ(mid):
                 for i in range(asterisknum):
                     asterisks=asterisks+'*'
                 mid=str(mid)[-10:][:1]+asterisks+str(mid)[-10:][-2:]
-            printp('[UID:'+str(mid)+' 未关注('+str(be_relation)+')，无效]')
+            printp('[UID:'+str(mid)+' 未关注自己('+str(be_relation)+')，无效]')
             return False
         else:
             return True
@@ -549,6 +545,50 @@ def checklvl(mid, HJlvl):
             return True
     else:
         return True
+
+def get_same_follow(vmid):
+    same_follow_list=[]
+    header={
+    "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+    "Cookie":cookie,
+    }
+    r=requests.get('http://api.bilibili.com/x/relation/same/followings?pn=1&vmid='+str(vmid),headers=header).text
+    try:
+        jdata=json.loads(r)['data']
+        total_num=jdata['total']
+        pages=math.ceil(total_num/50)
+        times=1
+        while times<=pages:
+            r=requests.get('http://api.bilibili.com/x/relation/same/followings?pn='+str(times)+'&vmid='+str(vmid),headers=header).text
+            try:
+                jlist=json.loads(r)['data']['list']
+                for i in range(len(jlist)):
+                    same_follow_list.append(jlist[i]['mid'])
+            except:
+                pass
+            times+=1
+    except:
+        pass
+    same_follow_list.sort()
+    #print(same_follow_list)
+    return same_follow_list
+
+def checkSameFollow(mid):
+    if NeedFollowOther:
+        sflist=get_same_follow(mid)
+        nfol=[ int(x) for x in NeedFollowOtherList ]
+        '''print(nfol)
+        print(sflist)
+        print(set(nfol).issubset(sflist))'''
+        if not set(nfol).issubset(sflist):
+            not_follow_list=list(set(nfol)-set(sflist))
+            printp('[UID:'+str(mid)+' 未关注指定用户中的'+str(not_follow_list).replace('[','').replace(']','').replace("'",'').replace(" ",'')+'，无效]')
+            return False
+        else:
+            return True
+    else:
+        return True
+        
 
 def linktodyid(dyid):
     #转换t.bilibili.com格式链接为动态id 备用正则/[0-9]{18}/
@@ -665,7 +705,7 @@ def clicked0():
     TZF=bool(chk1_state.get())
     TPL=bool(chk2_state.get())
     TDZ=bool(chk3_state.get())
-    TGZ=bool(chk4_state.get())
+    TGZ=NeedFollowSelf
     #TRZ=bool(chk5_state.get())
     global NEEDAT
     NEEDAT=bool(chk7_state.get())
@@ -710,14 +750,14 @@ def clicked0():
     RZOFF=False
     notime=True
     noDisplayUser1=(chk8_state.get())
-    if not TGZ and not TZF and not TPL and not TDZ:
+    if not TZF and not TPL and not TDZ:#not TGZ and
         tkinter.messagebox.showwarning("提示", '需要至少选中一个获奖条件呢！')
         #printp()
         return False
-    if TGZ and not TZF and not TPL and not TDZ:
+    '''if TGZ and not TZF and not TPL and not TDZ:
         tkinter.messagebox.showwarning("提示", '还需要选择除了关注以外的任一获奖条件嗷！')
         #printp()
-        return False
+        return False'''
     try:
         HJNUM=int(spin.get())
     except:
@@ -759,7 +799,8 @@ def clicked0():
     TPL2=repBool(TPL)
     TDZ2=repBool(TDZ)
     TGZ2=repBool(TGZ)
-    printp('转发：'+str(TZF2)+' 评论：'+str(TPL2)+' 点赞：'+str(TDZ2)+' 关注：'+str(TGZ2)+'\n最低等级：'+str(HJlvl)+' 抽奖号阈值：'+str(CJHnum))
+    TGZ3=repBool(NeedFollowOther)
+    printp('转发：'+str(TZF2)+' 评论：'+str(TPL2)+' 点赞：'+str(TDZ2)+' 关注：'+str(TGZ2)+' 关注其他：'+str(TGZ3)+'\n最低等级：'+str(HJlvl)+' 抽奖号阈值：'+str(CJHnum))
     if CJHnum!=-1:
         GLCJH=True
     else:
@@ -769,7 +810,7 @@ def clicked0():
     else:
         GLlvl=False
     notime=False
-    if TGZ:
+    if TGZ or NeedFollowOther:
         try:
                 cook=open('cookie.txt','r')
                 cookie=cook.read()
@@ -863,9 +904,13 @@ def clicked0():
         printp('-------------------------------------------')
         #抽奖条件：'+str())+'|
         #print(dyinfo)
-        if TGZ and dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')!=myuid:
+        if TGZ and dyinfo['card']['desc']['user_profile']['info']['uid']!=myuid:
             notime=True
-            printp('动态发送者('+dyinfo.get('card').get('desc').get('user_profile').get('info').get('uname')+')和当前已登录用户不一致!')
+            printp('动态发送者('+dyinfo['card']['desc']['user_profile']['info']['uname']+')和当前已登录用户不一致!')
+            return False
+        if NeedFollowOther and dyinfo['card']['desc']['user_profile']['info']['uid']!=myuid:
+            notime=True
+            printp('动态发送者('+dyinfo['card']['desc']['user_profile']['info']['uname']+')和当前已登录用户不一致!')
             return False
         try:
             lottdata=json.loads(dyinfo['card']['extension']['lott'])
@@ -988,6 +1033,9 @@ def clicked0():
     printp('')
     notime=False
     printp('已获取到符合要求的参与者数量为：'+str(len(list(LBALL))))
+    if GLCJH or NeedFollowOther:
+        notime=True
+        printp('注意：依据抽奖设定所需获取数据较多，请耐心等待')
     notime=True
     if HJNUM>len(list(LBALL)) or HJNUM<1:
         printp('输入的获奖者数量('+str(HJNUM)+')超出范围!')
@@ -996,15 +1044,14 @@ def clicked0():
     times=1
     lba=len(LBALL)
     BarProgress(85)
-    #BarProgress(85)
-    #BarProgress(85)
+    #LBALL=[491953625]
     while True:
         while True:
             if not len(LBALL) < HJNUM:
                 HJuser=secrets.choice(list(LBALL))#这句是核心功能之一，随机从参与者数组里抽一位
                 #print(HJuser)
                 if not HJuser in HJMD:
-                    if checkGZ(HJuser) and checklvl(HJuser,HJlvl) and checkCJH(HJuser,CJHnum):
+                    if checkGZ(HJuser) and checklvl(HJuser,HJlvl) and checkCJH(HJuser,CJHnum) and checkSameFollow(HJuser):
                         HJMD.append(HJuser)
                         #LBALL.remove(HJuser)
                         #printp('[抽到UID:'+str(HJuser)+']')
@@ -1372,6 +1419,159 @@ def clicked10(btn):
     btn.configure(text='     '+repBool2(bool(1-DisplayLogInfo))+'登录细节      ')
     login1window.update()
 
+def mo_switch_onoff(name,*ele):
+    global NeedFollowSelf
+    global NeedFollowOther
+    if name=='mochk1':
+        NeedFollowSelf=not NeedFollowSelf
+    elif name=='mochk2':
+        NeedFollowOther=not NeedFollowOther
+        switch_disnorm(ele)
+    more1window.update()
+
+def switch_disnorm(ele):
+    int(len(str(ele[0]['state'])))
+    if ele[0]['state']=='normal':
+        ele[0]['state']='disabled'
+    else:
+        ele[0]['state']='normal'
+
+def clicked12():
+    gzlist=motxt1.get()
+    #print(gzlist)
+    if gzlist=='':
+        tkinter.messagebox.showwarning("提示", '您未输入任何内容！')
+        #printp('假如还没有自己的cookie的话，可以运行附带的\ngetcookie.exe 或在浏览器打开 t.bili.fan 就能获取')
+        return False
+    gzlist=gzlist.split(',')
+    wgzlist=[]
+    try:
+        cook=open('cookie.txt','r')
+        cookie=cook.read()
+        cook.close()
+        cookiepath='cookie.txt'
+    except:
+        try:
+            cookiepath=askopenfilename(title='选择一个包含cookie的文本文件',initialdir=os.path.dirname(os.path.realpath(sys.argv[0])), filetypes=[('Cookie File','*.txt')])
+            cook=open(cookiepath,'r')
+            cookie=cook.read()
+            cook.close()
+        except:
+            tkinter.messagebox.showinfo("提示", '检测关注需要登录，请点击“登录/Cookie操作”按钮进行登录！')
+            #printp('假如还没有自己的cookie的话，可以运行附带的\ngetcookie.exe 或在浏览器打开 t.bili.fan 就能获取')
+            return False
+    cook=open(cookiepath,'r')
+    cookie=cook.read()
+    cook.close()
+    if 'ENCRYPTED\n' in cookie:
+        #decrycook(cookiepath)
+        #tkinter.messagebox.showwarning("提示",'需要解密cookie文件！')
+        tkinter.messagebox.showwarning("提示", '请将cookie文件解密后重试!')
+        decrycook(cookiepath)
+        return False
+    try:
+        header={
+        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+        "Cookie":cookie,
+        }
+        r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header).text
+        userinfo_dict=json.loads(r)
+        #print(r)
+        jdata=userinfo_dict['data']
+        myuid=jdata.get('mid')
+        name=str(jdata.get('name'))
+        level=jdata.get('level')
+        coins=jdata.get('coins')
+        needexp=str(jdata['level_exp']['next_exp']-jdata['level_exp']['current_exp'])
+        isLogin=True
+    except:
+        try:
+            if userinfo_dict['code']==-412:
+                tkinter.messagebox.showinfo("提示", '模拟登录失败，请求间隔过短，请过一段时间后重试!')
+                return False
+        except:
+            pass
+        tkinter.messagebox.showinfo("提示", '模拟登录失败，可能是cookie无效，已过期或未登录，请重新获取cookie!')
+        return False
+    for i in range(len(gzlist)):
+        if not gzlist[i]=='':
+            url='http://api.bilibili.com/x/space/acc/relation?mid='+str(gzlist[i])
+            header={
+            "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+            "Cookie":cookie,
+            }
+            res = requests.get(url=url,headers=header)
+            resback=json.loads(res.text)
+            rinfo=resback.get('data')
+            try:
+                relation=rinfo['relation']['attribute']
+            except:
+                relation=0
+            #print(res.text)
+            if not relation==2 and not relation==6:
+                wgzlist.append(gzlist[i])
+    if not len(wgzlist)==0:
+        tkinter.messagebox.showwarning("提示", '保存失败，还有以下用户您并未关注：\n'+str(wgzlist).replace('[','').replace(']','').replace("'",'').replace(" ",''))
+    else:
+        tkinter.messagebox.showinfo("提示", '保存成功，您已关注所有指定用户！')
+        while '' in gzlist:
+            gzlist.remove('')
+        global NeedFollowOtherList
+        NeedFollowOtherList=list(set(gzlist))
+
+NeedFollowSelf=False
+NeedFollowOther=False
+NeedFollowOtherList=[]
+def clicked11():
+    global more1window
+    global motxt1
+    global mochk1_state
+    more1window = tk.Toplevel(window)
+    more1window.title('更多选项')
+    more1window.configure(bg='white')
+    more1window.transient(window) 
+    width = 266
+    heigh = 155
+    screenwidth = more1window.winfo_screenwidth()
+    screenheight = more1window.winfo_screenheight()-50
+    more1window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
+    more1window.resizable(0,0)
+    try:
+        more1window.iconbitmap('icon.ico')
+    except:
+        try:
+            setIcon(more1window)
+        except:
+            pass
+    mochk1_state = tk.BooleanVar()
+    mochk1_state.set(NeedFollowSelf)
+    mochk1 = ttk.Checkbutton(more1window, text="需要关注自己", var=mochk1_state ,command=lambda:mo_switch_onoff('mochk1'))
+    mochk1.place(x=10, y=10)
+    mochk2_state = tk.BooleanVar()
+    mochk2_state.set(NeedFollowOther)
+    mochk2 = ttk.Checkbutton(more1window, text="需要关注其他用户", var=mochk2_state,command=lambda:mo_switch_onoff('mochk2',motxt1))
+    mochk2.place(x=10, y=40)
+    molbl1 = tk.Label(more1window, text="需一并关注的UID (使用,隔开 需要自己也关注)")
+    molbl1.place(x=7, y=65)
+    molbl1.configure(bg='white')
+    motxt1 = ttk.Entry(more1window, width=34)
+    motxt1.place(x=10, y=86)
+    nfol=NeedFollowOtherList
+    while '' in nfol:
+        nfol.remove('')
+    motxt1.insert(tk.END,str(nfol).replace('[','').replace(']','').replace("'",'').replace(" ",''))
+    if not NeedFollowOther:
+        motxt1['state']='disabled'
+    #print(NeedFollowOtherList)
+    if NeedFollowOther and NeedFollowOtherList==[]:
+        mochk2_state.set(False)
+        motxt1['state']='disabled'
+    mobtn1 = ttk.Button(more1window, text="保存并检测", command=clicked12)
+    mobtn1.place(x=168, y=112)
+    more1window.lift()
+    more1window.grab_set()
+    more1window.mainloop()
+
 window = tk.Tk()#初始化一个窗口
 window.title('B站动态抽奖工具 Python GUI版 '+version+' 演示视频av247587107 按下F1可查看按键操作说明')#标题 By: 芍芋 '+updatetime+' 
 window.configure(bg='white')#背景颜色
@@ -1417,8 +1617,7 @@ def pressbutton2(btnn,command):
 
 def clickedkeyhelp():
     #按键操作帮助
-    tkinter.messagebox.showinfo("按键操作说明", 'F1 显示本说明\nF2 粘贴剪贴板内容到输入框\nF3 开始抽奖\nF5 切换转发开关\nF6 切换评论开关\nF7 切换点赞开关\nF8 切换关注开关\nF9 切换隐藏无效用户开关\nF10 切换自动复制用户名开关\nF11 保存当前记录\nF12 登录\Cookie操作')
-
+    tkinter.messagebox.showinfo("按键操作说明", 'F1 显示本说明\nF2 粘贴剪贴板内容到输入框\nF3 开始抽奖\nF5 切换转发开关\nF6 切换评论开关\nF7 切换点赞开关\nF8 更多选项\nF9 切换隐藏无效用户开关\nF10 切换自动复制用户名开关\nF11 保存当前记录\nF12 登录\Cookie操作')
 
 #定义文本
 lbl1 = tk.Label(window, text="在下方输入动态链接或者动态ID (使用Ctrl+V粘贴)")
@@ -1441,21 +1640,24 @@ chk2_state = tk.BooleanVar()
 chk2_state.set(False) # Set check state
 chk2 = ttk.Checkbutton(window, text="评论", var=chk2_state)
 chk2.bind_all('<F6>', lambda a:switch_to(chk2_state))
-chk2.place(x=96.6, y=92)
+chk2.place(x=90, y=92)
 chk3_state = tk.BooleanVar()
 chk3_state.set(False) # Set check state
 chk3 = ttk.Checkbutton(window, text="点赞", var=chk3_state)
 chk3.bind_all('<F7>', lambda a:switch_to(chk3_state))
-chk3.place(x=183.2, y=92)
-chk4_state = tk.BooleanVar()
+chk3.place(x=170, y=92)
+'''chk4_state = tk.BooleanVar()
 chk4_state.set(False) # Set check state
 chk4 = ttk.Checkbutton(window, text="关注", var=chk4_state)
 chk4.bind_all('<F8>', lambda a:switch_to(chk4_state))
-chk4.place(x=270, y=92)
+chk4.place(x=270, y=92)'''
+btn4 = ttk.Button(window, text="更多选项", command=clicked11)
+btn4.bind_all('<F8>', lambda a:pressbutton(clicked11))
+btn4.place(x=230, y=90)
 spin = ttk.Spinbox(window, from_=1, to=999, width=5)
 spin.place(x=69, y=153)
-#spin.configure(bg='white')
 spin.set(1)
+#spin.configure(bg='white')
 #lbl7 = tk.Label(window, text="值越小越严格,-1=无☞")
 #lbl7.place(x=125, y=189)
 #lbl7.configure(bg='white')
@@ -1508,10 +1710,10 @@ lbl3.configure(bg='white')
 lbl4 = tk.Label(window, text="过滤抽奖号(0-10)  [值越小越严格,-1=禁用]☞")
 lbl4.place(x=10, y=189)
 lbl4.configure(bg='white')
-lbl5 = tk.Label(window, text="注: 评论获取不包括楼中楼")#\n抽取时如果数据过多可能会出现无响应，耐心等待即可~")
+lbl5 = tk.Label(window, text="注: 评论获取不包括楼中楼")
 lbl5.place(x=10, y=115)
 lbl5.configure(bg='white')
-lbl6 = tk.Label(window, text="获奖者最低等级")#\n(0-6)")
+lbl6 = tk.Label(window, text="获奖者最低等级")
 lbl6.place(x=167, y=152)
 lbl6.configure(bg='white')
 output = scrolledtext.ScrolledText(window, width=51, height=31, relief="solid")
@@ -1534,7 +1736,7 @@ chkupdwindow.configure(bg='white')
 chkupdwindow.transient(window) 
 width = 300
 heigh = 100
-screenwidth = chkupdwindow.winfo_screenwidth()+306
+screenwidth = chkupdwindow.winfo_screenwidth()+300
 screenheight = chkupdwindow.winfo_screenheight()-50#+200
 chkupdwindow.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
 chkupdwindow.resizable(0,0)
@@ -1550,8 +1752,5 @@ chklbl1.configure(bg='white')
 chklbl1.place(relx = 0.5, rely = 0.4, anchor = "center")
 chkupdthread=threading.Thread(target=chkupd,args=())
 chkupdthread.start()
-#windnd.hook_droptext(window, func=changelink)
-#chkupdwindowIsOpen=True
-#chkupdwindowIsOpen=False
 
 window.mainloop()
