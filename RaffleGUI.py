@@ -1163,8 +1163,8 @@ def clicked4():
     img.save('qrcode.png')
     login2window = tk.Toplevel(window)
     login2window.title('使用B站客户端扫描登录')
-    width = 300
-    heigh = 300
+    width = 295
+    heigh = 280
     screenwidth = login2window.winfo_screenwidth()
     screenheight = login2window.winfo_screenheight()-50
     login2window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
@@ -1180,7 +1180,8 @@ def clicked4():
             pass
     photo = tk.PhotoImage(file='qrcode.png')
     w = tk.Label(login2window, image=photo)
-    w.pack()
+    w.place(x=-1, y=-15)
+    #w.pack()
     os.unlink('qrcode.png')
     #_thread.start_new_thread(chklog,(oauthkey,login2window))
     thread = threading.Thread(target=chklog,args=(oauthkey,login2window))
