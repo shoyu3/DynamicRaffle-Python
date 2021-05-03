@@ -27,7 +27,7 @@ except:
     pass
 #打包成exe所需的库
 
-version='1.2.0.018'
+version='1.2.1.019'
 updatetime='2021-05-03'
 
 class NullClass:
@@ -189,6 +189,7 @@ def _get_offset(data_json):
 
 def getZF(dyn_id):
     global RZOFF
+    global ZFidDict
     printp('正在获取完整转发列表……')
     RZOFF=True
     printp('Loading...')
@@ -212,6 +213,7 @@ def getZF(dyn_id):
     uidall={}
     now_num = 0
     count = 0
+    ZFidDict={}
     #users = []
     while now_num < total_num:  # 循环获取页面
         param = {'dynamic_id': dyn_id, 'offset': offset}
@@ -224,8 +226,11 @@ def getZF(dyn_id):
                 count += 1
                 try:
                     uid = data_json['data']['items'][i]['desc']['uid']
+                    zfdyid=data_json['data']['items'][i]['desc']['dynamic_id']
                     uname = data_json['data']['items'][i]['desc']['user_profile']['info']['uname']
                     uidall[uid]=uname
+                    if EnaSuoYin:
+                        ZFidDict[uid]=zfdyid
                     outrb()
                     curusr=len(uidall)
                     percent='%.2f' % float(curusr/total_num*100)
@@ -266,8 +271,10 @@ def getPL(Dynamic_id):
     link1 = 'http://api.bilibili.com/x/v2/reply?&jsonp=json&pn='
     link2 = '&type=11&oid='
     link3 = '&sort=2'#&_=1570498003332'
+    global PLidDict
     #comment_list = []
     userlist_1={}
+    PLidDict={}
     #pool = {}
     r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
     json_data = json.loads(r)
@@ -300,13 +307,23 @@ def getPL(Dynamic_id):
         json_data1 = json.loads(r)
         #print(len(str(json_data1)))
         if json_data1['data']['replies']:
-            for reply in json_data1['data']['replies']:
-                userlist_1[int(reply['member']['mid'])]=reply['member']['uname']
-                outrb()
-                curusr=len(userlist_1)
-                percent='%.2f' % float(curusr/comments_num*100)
-                BarProgress(55+15*float(curusr/comments_num))
-                printp(str(percent)+'% ('+str(curusr)+'/'+str(comments_num)+')')
+            if EnaSuoYin:
+                for reply in json_data1['data']['replies']:
+                    userlist_1[int(reply['member']['mid'])]=reply['member']['uname']
+                    PLidDict[int(reply['member']['mid'])]=reply['rpid']
+                    outrb()
+                    curusr=len(userlist_1)
+                    percent='%.2f' % float(curusr/comments_num*100)
+                    BarProgress(55+15*float(curusr/comments_num))
+                    printp(str(percent)+'% ('+str(curusr)+'/'+str(comments_num)+')')
+            else:
+                for reply in json_data1['data']['replies']:
+                    userlist_1[int(reply['member']['mid'])]=reply['member']['uname']
+                    outrb()
+                    curusr=len(userlist_1)
+                    percent='%.2f' % float(curusr/comments_num*100)
+                    BarProgress(55+15*float(curusr/comments_num))
+                    printp(str(percent)+'% ('+str(curusr)+'/'+str(comments_num)+')')
         current_page += 1
         if current_page > pages_num:
             break
@@ -430,6 +447,17 @@ def getname(users,userdict):
     for i in users:
         uname=userdict[i]
         printp(str(times)+' '+uname+' (UID:'+str(i)+')')
+        if EnaSuoYin:
+            try:
+                printp('>>对应动态链接：https://t.bilibili.com/'+str(ZFidDict[i]))
+            except:
+                pass
+            try:
+                printp('>>对应评论链接：https://t.bilibili.com/'+str(dyid)+'#reply'+str(PLidDict[i]))
+            except:
+                pass
+            if times!=len(users):
+                printp('-------------------------------------------')
         if NEEDAT:
             ATuser.append('@'+uname)
         times+=1
@@ -598,13 +626,18 @@ def checkSameFollow(mid):
 
 def linktodyid(dyid):
     #转换t.bilibili.com格式链接为动态id 备用正则/[0-9]{18}/
-    if "t.bilibili.com/" in dyid:
+    if "t.bilibili.com/" in dyid and '#' in dyid:
+        dyid, sep, tail = dyid.partition('#')
         dyid, sep, tail = dyid.partition('?')
         dyid=dyid[dyid.rfind('/'):]
         head, sep, dyid = dyid.partition('/')
-        return dyid
+    elif "t.bilibili.com/" in dyid:
+        dyid, sep, tail = dyid.partition('?')
+        dyid=dyid[dyid.rfind('/'):]
+        head, sep, dyid = dyid.partition('/')
     else:
         return dyid
+    return dyid
 
 def clicked():
     btn['state']=tk.DISABLED
@@ -640,8 +673,12 @@ def BarProgress(num):
             bar.stop()
             break
         barp.configure(text=str(int(bar['value']))+'%')
-        time.sleep(0.01)
+        time.sleep(0.001)
         barval=bar['value']
+        #if bar['value']==100:
+        #    bar.stop()
+        #    break
+        #print(bar['value'])
     bar['value']=barval
 
 def checkTJ(dycont):
@@ -656,7 +693,9 @@ def checkTJ(dycont):
     if '赞' in dycont or '点赞' in dycont:
         DZ='赞'
     if '关' in dycont or '关注' in dycont:
-        if not '关于' in dycont and '关注' in dycont:
+        if not '关于' in dycont:
+            GZ='关'
+        elif '关注' in dycont:
             GZ='关'
     TJ='['+ZF+PL+DZ+GZ+']'
     if CHKCJDT(dycont):
@@ -702,6 +741,9 @@ def clicked0():
     global barval
     global noDisplayUser1
     global RaffleBeginTime
+    global EnaSuoYin
+    global ZFidDict
+    global PLidDict
     RaffleBeginTime=time.localtime()
     bar['value']=0
     barval=0
@@ -715,6 +757,9 @@ def clicked0():
     #TRZ=bool(chk5_state.get())
     global NEEDAT
     NEEDAT=bool(chk7_state.get())
+    ZFidDict={}
+    PLidDict={}
+    EnaSuoYin=bool(chk9_state.get())
     if True:#chk6_state.get():
         output['state']='normal'
         output.delete(1.0, tk.END)
@@ -942,7 +987,10 @@ def clicked0():
         if SHEXIT:
                 return False
         notime=True
-        printp('获取出错，可能是动态链接/ID输入有误，请检查\n详细报错如下：\n'+str(repr(e)))
+        if str(repr(e))=="KeyError('card')":
+            printp('动态详情为空，可能是动态链接/ID输入有误，请检查')
+        else:
+            printp('获取出错，可能是动态链接/ID输入有误，请检查\n详细报错如下：\n'+str(repr(e)))
         try:
             printp('获取到的信息：\n'+res.text)
         except:
@@ -953,7 +1001,7 @@ def clicked0():
     printp('准备开始抽取……\n(抽取时将自动过滤UP主自己和重复转发/评论的用户)')
     #bar['value']=40
     notime=True
-    if TZF and dyinfo['card']['desc']['repost']>575:
+    if TZF and dyinfo['card']['desc']['repost']>550:
         printp('警告：转发数量超过550的部分可能无法被完全统计!')
     printp('')
     Error=False
@@ -1103,6 +1151,8 @@ def clicked0():
     #printp('程序即将退出……')
     #bar['value']=100
     btn4['state']=tk.NORMAL
+    #if EnaSuoYin:
+    #    print(ZFidDict,PLidDict)
     barval=100
     if NEEDAT:
         #print(ATuser)
@@ -1134,8 +1184,10 @@ def clicked2():
 By: 芍芋
 Blog: https://shoyu.top
 Bili.fan: https://bili.fan
-BiliBili: https://space.bilibili.com/229778960
-爱发电: https://afdian.net/@shoyu''')
+哔哩哔哩: https://space.bilibili.com/229778960
+爱发电: https://afdian.net/@shoyu
+本项目Github：https://github.com/shoyu3/DynamicRaffle-Python
+Copyright © 2021 Bili.fan 本项目以 GPL v3 开源''')
 
 def clicked3():
     global login1window
@@ -2022,7 +2074,7 @@ btn4 = ttk.Button(window, text="更多选项", command=clicked11)
 btn4.bind_all('<F8>', lambda a:pressbutton(clicked11))
 btn4.place(x=230, y=90)
 spin = ttk.Spinbox(window, from_=1, to=999, width=5)
-spin.place(x=69, y=153)
+spin.place(x=69, y=150)
 spin.set(1)
 #spin.configure(bg='white')
 #lbl7 = tk.Label(window, text="值越小越严格,-1=无☞")
@@ -2030,10 +2082,10 @@ spin.set(1)
 #lbl7.configure(bg='white')
 #var2 = tk.StringVar(window)
 lbln1= tk.Label(window, text="0")
-lbln1.place(x=300, y=152)
+lbln1.place(x=300, y=149)
 lbln1.configure(bg='white')
 lbln2= tk.Label(window, text="-1")
-lbln2.place(x=300, y=190)
+lbln2.place(x=300, y=187)
 lbln2.configure(bg='white')
 nvar2 = tk.IntVar(window)
 spin3=Limiter(window,from_=0,to=6,length=53,command=lambda x:show_value(nvar2,lbln1),precision=4,variable=nvar2)
@@ -2041,26 +2093,31 @@ spin3=Limiter(window,from_=0,to=6,length=53,command=lambda x:show_value(nvar2,lb
 spin3['values']=(0,1,2,3,4,5,6)'''
 spin3.configure(style="TScale")
 #spin3.configure(bg='white',orient="horizontal")
-spin3.place(x=242, y=151)
+spin3.place(x=242, y=148)
 nvar = tk.IntVar(window)
 spin2=Limiter(window,from_=-1,to=10,length=83,command=lambda x:show_value(nvar,lbln2),precision=4,variable=nvar)
 '''spin2 = ttk.Combobox(window, width=4, textvariable=var)
 spin2['values']=(-1,0,1,2,3,4,5,6,7,8,9,10)'''
 spin2.configure(style="TScale")
 #spin2.configure(bg='white',orient="horizontal")
-spin2.place(x=212, y=189)
+spin2.place(x=212, y=186)
 spin2.set(-1)
 spin3.set(0)
 chk8_state = tk.BooleanVar()
 chk8_state.set(False) # Set check state
 chk8 = ttk.Checkbutton(window, text="隐藏无效用户", var=chk8_state)
 chk8.bind_all('<F9>', lambda a:switch_to(chk8_state))
-chk8.place(x=10, y=230)
+chk8.place(x=10, y=220)
 chk7_state = tk.BooleanVar()
 chk7_state.set(False) # Set check state
 chk7 = ttk.Checkbutton(window, text="自动复制用户名", var=chk7_state)
 chk7.bind_all('<F10>', lambda a:switch_to(chk7_state))
-chk7.place(x=10, y=260)
+chk7.place(x=10, y=245)
+chk9_state = tk.BooleanVar()
+chk9_state.set(True) # Set check state
+chk9 = ttk.Checkbutton(window, text="索引转发/评论", var=chk9_state)
+#chk9.bind_all('<F10>', lambda a:switch_to(chk7_state))
+chk9.place(x=10, y=270)
 '''chk5_state = BooleanVar()
 chk5_state.set(False) # Set check state
 chk5 = ttk.Checkbutton(window, text="保存抽奖记录", var=chk5_state)
@@ -2074,7 +2131,7 @@ btn4.bind_all('<F11>', lambda a:pressbutton2(btn4,clicked9))
 btn4.place(x=10, y=295)
 btn2 = ttk.Button(window, text="关于本程序", command=clicked2)
 btn2.bind_all('<F1>', lambda a:pressbutton(clickedkeyhelp))
-btn2.place(x=228, y=242)
+btn2.place(x=228, y=258)
 #btn2.configure(style="TButton")
 btn3 = ttk.Button(window, text="登录/Cookie操作", command=clicked3)
 btn3.bind_all('<F12>', lambda a:pressbutton(clicked3))
@@ -2085,16 +2142,16 @@ btn.bind_all('<F3>', lambda a:pressbutton(clicked))
 btn.place(x=10, y=340)
 btn.configure(bg='deepskyblue',height=2,width=42)
 lbl3 = tk.Label(window, text="获奖人数")
-lbl3.place(x=10, y=152)
+lbl3.place(x=10, y=149)
 lbl3.configure(bg='white')
 lbl4 = tk.Label(window, text="过滤抽奖号 [值越小越严格,-1=禁用]")
-lbl4.place(x=10, y=189)
+lbl4.place(x=10, y=186)
 lbl4.configure(bg='white')
 lbl5 = tk.Label(window, text="注: 评论获取不包括楼中楼")
 lbl5.place(x=10, y=115)
 lbl5.configure(bg='white')
 lbl6 = tk.Label(window, text="获奖者最低等级")
-lbl6.place(x=147, y=152)
+lbl6.place(x=147, y=149)
 lbl6.configure(bg='white')
 output = scrolledtext.ScrolledText(window, width=51, height=31, relief="solid")
 output.place(x=333, y=17)
