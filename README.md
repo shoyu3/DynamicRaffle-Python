@@ -7,15 +7,16 @@
 [![DevLanguage](https://img.shields.io/badge/%E5%BC%80%E5%8F%91%E8%AF%AD%E8%A8%80-Python-brightgreen.svg)](#)
 [![GitHub license](https://img.shields.io/github/license/shoyu3/DynamicRaffle-Python.svg?label=开源许可)](https://github.com/shoyu3/DynamicRaffle-Python/blob/master/LICENSE)
 
-## 使用前必看
+## ⚠使用前必看
 
 此工具无法突破B站对转发接口获取上限的限制（550条左右），因此将最高转发量设置为600，如想要抽奖的动态已经超出此指标，则建议改为在评论区抽
 
-## 工具截图
+## 🧱工具截图
 
-![image](https://user-images.githubusercontent.com/75879378/116789074-ad7cd380-aadf-11eb-890c-37c57a7c3aea.png)
+![image](https://user-images.githubusercontent.com/75879378/116866639-56d9db80-ac3e-11eb-951a-604d813dff42.png)
 
 <!--
+![image](https://user-images.githubusercontent.com/75879378/116789074-ad7cd380-aadf-11eb-890c-37c57a7c3aea.png)
 最新版本（1.1.4）：
 ![图片](https://user-images.githubusercontent.com/75879378/115114829-d4a5b200-9fc3-11eb-915e-d662a2c55319.png)
 旧版本（1.1.0）：
@@ -27,7 +28,7 @@
 -->
 部分实现方法和思路参考此项目：https://github.com/LeoChen98/BiliRaffle
 
-## 如何使用
+## 🛠如何使用
 
 **Windows平台（win10/win8）：**
 
@@ -86,6 +87,8 @@ pip3 install Image
 
 之后点击代码目录右上角的下载zip，解压，并在解压后的目录里打开终端输入```python3 RaffleGUI.py```后运行
 
+注：如果已经安装wine可以尝试直接运行打包后的exe文件（但不建议这么做，wine直接运行存在部分兼容性问题）
+
 **MacOS平台：**
 
 下载python3安装包并安装（假设以前没有安装过，MacOS只自带了python2），完成后在终端（Terminal）运行下面的命令：<!--（如果提示找不到命令在每条的pip后面加一个3）-->
@@ -116,19 +119,19 @@ pip install Image
 
 注：安卓版可以直接在输入框粘贴从B站客户端分享页面复制的b23.tv短链，但因运行器限制自动复制用户名功能不可用（已屏蔽）
 
-注2：安卓版更新频率极低（没精力同时维护和测试），最新版本是1.1.1.010
+注2：安卓版更新频率极低（没精力同时维护和测试），最后一次更新版本是1.1.1.010（2021-4-3）
 
-## 关于关注检测
+## 🧶关于关注检测
 
 检测关注需要登录自己的B站账号，在最近的版本里已经整合进了getcookie.exe的功能，另外还增加了注销cookie的选项，可以快速注销此次登录
 
 一般建议如果不是十分使用抽奖关注检测功能的话可以在使用完之后注销cookie，保护账号安全（当然就算不注销只要不对外泄露就不会有风险）
 
-## 赞助开发者
+## ❤赞助开发者
 
 ☞[前往爱发电](https://afdian.net/@shoyu)
 
-## 源码目录
+## ✔源码目录
 
 - RaffleGUI.py 主程序
 - RaffleGUIforPydroid.py 安卓平台主程序
