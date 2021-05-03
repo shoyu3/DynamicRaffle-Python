@@ -34,6 +34,8 @@
 
 前往[本项目最新的Release](https://github.com/shoyu3/DynamicRaffle-Python/releases/latest)，点击文件列表中的RaffleGUI.exe文件下载，双击运行
 
+启动时可能被杀毒软件或Windows Defender误识别为病毒，如无法正常启动请将RaffleGUI.exe添加信任
+
 **Windows平台（win7，或无法直接运行exe的电脑）：**
 
 下载python3安装包并安装（假设以前没有安装过，不能安装最新的3.9，推荐安装3.8），完成后在命令提示符（CMD）运行下面的命令：
