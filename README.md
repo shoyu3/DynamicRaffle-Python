@@ -7,6 +7,8 @@
 [![DevLanguage](https://img.shields.io/badge/%E5%BC%80%E5%8F%91%E8%AF%AD%E8%A8%80-Python-brightgreen.svg)](#)
 [![GitHub license](https://img.shields.io/github/license/shoyu3/DynamicRaffle-Python.svg?label=开源许可)](https://github.com/shoyu3/DynamicRaffle-Python/blob/master/LICENSE)
 
+[前往哔哩哔哩查看演示视频](https://www.bilibili.com/av247587107)
+
 ## ⚠使用前必看
 
 此工具无法突破B站对转发接口获取上限的限制（550条左右），因此将最高转发量设置为600，如想要抽奖的动态已经超出此指标，则建议改为在评论区抽
