@@ -654,7 +654,7 @@ def checkZBJ(mid):
         else:
             return True
     else:
-        return False
+        return True
 
 def linktodyid(dyid):
     #转换t.bilibili.com格式链接为动态id 备用正则/[0-9]{18}/
