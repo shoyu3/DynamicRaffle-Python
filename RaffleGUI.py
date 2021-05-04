@@ -27,8 +27,8 @@ except:
     pass
 #打包成exe所需的库
 
-version='1.2.1.019'
-updatetime='2021-05-03'
+version='1.2.2.020'
+updatetime='2021-05-04'
 
 class NullClass:
     def is_alive(N):
@@ -101,7 +101,7 @@ def chkupd():
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
     }
     try:
-        r=requests.get('https://api.github.com/repos/shoyu3/DynamicRaffle-Python/releases/latest',headers=header)
+        #r=requests.get('https://api.github.com/repos/shoyu3/DynamicRaffle-Python/releases/latest',headers=header)
         gitreturn=json.loads(r.text)
         gitversion=gitreturn['name']
         gitver=gitversion[gitversion.rfind('.'):]
@@ -116,7 +116,10 @@ def chkupd():
                 hh=''
             IsGotoupd=tkinter.messagebox.askyesno("提示", '有新版本可用！建议及时更新~\n当前版本：'+str(version)+'\n最新版本：'+str(gitversion)+'\n更新说明：'+hh+gitreturn['body']+'\n点击“是”前往更新，点击“否”继续运行')
             if IsGotoupd:
-                os.system('start '+gitreturn['html_url'])
+                if pform=='win':
+                    os.system('start '+gitreturn['html_url'])
+                else:
+                    tkinter.messagebox.showinfo("提示",'非windows平台请手动在浏览器打开项目地址下载更新！\n'+gitreturn['html_url'])
             updinfo='有新版本可用！('+gitversion+' > '+version+')'
         else:
             try:
@@ -623,6 +626,35 @@ def checkSameFollow(mid):
     else:
         return True
         
+def checkZBJ(mid):
+    if NeedHaveLiveRoom:
+        url='http://api.bilibili.com/x/space/acc/info?mid='+str(mid)
+        header={
+        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/75.0.4324.182 Safari/537.36",
+        }
+        res = requests.get(url=url,headers=header)
+        resback=json.loads(res.text)
+        usrinfo=resback.get('data')
+        try:
+            usrlroom=usrinfo['live_room']['roomStatus']
+            usrlroom2=usrinfo['live_room']['roomid']
+        except:
+            #print(res.text)
+            printp('获取UID:'+str(mid)+'的直播间信息出错，请自行查看!')
+            return True
+        if usrlroom==0:
+            if noDisplayUser1:
+                asterisknum=len(str(mid))-3
+                asterisks=''
+                for i in range(asterisknum):
+                    asterisks=asterisks+'*'
+                mid=str(mid)[-10:][:1]+asterisks+str(mid)[-10:][-2:]
+            printp('[UID:'+str(mid)+' 未开通直播间('+str(usrlroom)+','+str(usrlroom2)+')，无效]')
+            return False
+        else:
+            return True
+    else:
+        return False
 
 def linktodyid(dyid):
     #转换t.bilibili.com格式链接为动态id 备用正则/[0-9]{18}/
@@ -764,7 +796,9 @@ def clicked0():
         output['state']='normal'
         output.delete(1.0, tk.END)
         output['state']='disabled'
+    notime=True
     printp(updinfo)
+    notime=False
     if txt.get()=='':
         tkinter.messagebox.showwarning("提示", '需要输入动态链接或动态ID！')
         return False
@@ -1111,7 +1145,7 @@ def clicked0():
                 HJuser=secrets.choice(list(LBALL))#这句是核心功能之一，随机从参与者数组里抽一位
                 #print(HJuser)
                 if not HJuser in HJMD:
-                    if checkGZ(HJuser) and checklvl(HJuser,HJlvl) and checkCJH(HJuser,CJHnum) and checkSameFollow(HJuser):
+                    if checkGZ(HJuser) and checklvl(HJuser,HJlvl) and checkCJH(HJuser,CJHnum) and checkZBJ(HJuser) and checkSameFollow(HJuser):
                         HJMD.append(HJuser)
                         #LBALL.remove(HJuser)
                         #printp('[抽到UID:'+str(HJuser)+']')
@@ -1501,12 +1535,15 @@ def clicked10(btn):
 def mo_switch_onoff(name,*ele):
     global NeedFollowSelf
     global NeedFollowOther
+    global NeedHaveLiveRoom
     if name=='mochk1':
         NeedFollowSelf=not NeedFollowSelf
     elif name=='mochk2':
         NeedFollowOther=not NeedFollowOther
         #str(NeedFollowOther)
         switch_disnorm(ele)
+    elif name=='mochk3':
+        NeedHaveLiveRoom=not NeedHaveLiveRoom
     more1window.update()
 
 def switch_disnorm(ele):
@@ -1601,6 +1638,7 @@ def clicked12():
 
 NeedFollowSelf=False
 NeedFollowOther=False
+NeedHaveLiveRoom=False
 NeedFollowOtherList=[]
 def clicked11():
     global more1window
@@ -1611,7 +1649,7 @@ def clicked11():
     more1window.configure(bg='white')
     more1window.transient(window) 
     width = 308
-    heigh = 125
+    heigh = 155
     screenwidth = more1window.winfo_screenwidth()
     screenheight = more1window.winfo_screenheight()-50
     more1window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
@@ -1627,15 +1665,19 @@ def clicked11():
     mochk1_state.set(NeedFollowSelf)
     mochk1 = ttk.Checkbutton(more1window, text="需要关注自己", var=mochk1_state ,command=lambda:mo_switch_onoff('mochk1'))
     mochk1.place(x=10, y=10)
+    mochk3_state = tk.BooleanVar()
+    mochk3_state.set(NeedHaveLiveRoom)
+    mochk3 = ttk.Checkbutton(more1window, text="需要拥有直播间", var=mochk3_state ,command=lambda:mo_switch_onoff('mochk3'))
+    mochk3.place(x=179, y=10)
     mochk2_state = tk.BooleanVar()
     mochk2_state.set(NeedFollowOther)
     mochk2 = ttk.Checkbutton(more1window, text="需要关注其他用户", var=mochk2_state,command=lambda:mo_switch_onoff('mochk2',motxt1))
-    mochk2.place(x=179, y=10)
+    mochk2.place(x=10, y=40)
     molbl1 = tk.Label(more1window, text="需一并关注的UID (使用半角逗号,隔开 需要自己也关注)")
-    molbl1.place(x=4, y=35)
+    molbl1.place(x=4, y=65)
     molbl1.configure(bg='white')
     motxt1 = ttk.Entry(more1window, width=40)
-    motxt1.place(x=10, y=56)
+    motxt1.place(x=10, y=86)
     nfol=NeedFollowOtherList
     while '' in nfol:
         nfol.remove('')
@@ -1648,16 +1690,17 @@ def clicked11():
         motxt1['state']='disabled'
 
     mobtn2 = ttk.Button(more1window, text="搜索关注列表", command=clicked13)
-    mobtn2.place(x=10, y=82)
+    mobtn2.place(x=10, y=112)
     mobtn3 = ttk.Button(more1window, text="读取动态at", command=clicked14)
-    mobtn3.place(x=100, y=82)
+    mobtn3.place(x=100, y=112)
     mobtn1 = ttk.Button(more1window, text="保存并检测", command=clicked12)
-    mobtn1.place(x=210, y=82)
+    mobtn1.place(x=210, y=112)
     more1window.lift()
     more1window.grab_set()
     more1window.mainloop()
 
 def clicked11_old():
+    '''
     global more1window
     global motxt1
     global mochk1_state
@@ -1709,7 +1752,8 @@ def clicked11_old():
     mobtn1.place(x=210, y=112)
     more1window.lift()
     more1window.grab_set()
-    more1window.mainloop()
+    more1window.mainloop()'''
+    pass
 
 def clicked13():
     global more2window
@@ -1867,7 +1911,7 @@ def clicked14():
     mo3lbl2.configure(bg='white')
     mo3txt1 = ttk.Entry(more3window, width=25)
     mo3txt1.place(x=10, y=20)
-    mo3btn1 = ttk.Button(more3window, text="检测", command=clicked16)
+    mo3btn1 = ttk.Button(more3window, text="读取", command=clicked16)
     mo3btn1.place(x=193, y=18)
     mo3lbox = tk.Listbox(more3window,relief='solid',width=38,height=8)
     mo3lbox.place(x=10, y=45)
