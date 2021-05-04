@@ -101,7 +101,7 @@ def chkupd():
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
     }
     try:
-        #r=requests.get('https://api.github.com/repos/shoyu3/DynamicRaffle-Python/releases/latest',headers=header)
+        r=requests.get('https://api.github.com/repos/shoyu3/DynamicRaffle-Python/releases/latest',headers=header)
         gitreturn=json.loads(r.text)
         gitversion=gitreturn['name']
         gitver=gitversion[gitversion.rfind('.'):]
