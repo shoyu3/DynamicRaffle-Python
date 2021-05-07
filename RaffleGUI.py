@@ -27,8 +27,8 @@ except:
     pass
 #打包成exe所需的库
 
-version='1.2.2.020'
-updatetime='2021-05-04'
+version='1.3.0.021'
+updatetime='2021-05-07'
 
 class NullClass:
     def is_alive(N):
@@ -209,6 +209,12 @@ def getZF(dyn_id):
     param = {'dynamic_id': dyn_id, 'offset': offset}
     data = httpsession.get(dynamic_api, headers=header, params=param, timeout=10)
     data_json = json.loads(data.text)
+    if data_json['code']==-412:
+        notime=True
+        outrb()
+        printp('获取转发失败，调取间隔过短，请过一段时间再试吧~')
+        notime=False
+        return False
     total_num = data_json['data']['total']
     info['total'] = total_num
 
@@ -271,8 +277,25 @@ def getPL(Dynamic_id):
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/86.0.4324.182 Safari/537.36",
     }
     rid = dyinfo['card']['desc']['rid']
+    old_rid=rid
+    if dyn_type=='shipin':
+        typnum=1
+    elif dyn_type=='zhuanlan':
+        typnum=12
+    elif dyn_type=='xiangbu':
+        typnum=11
+    elif dyn_type=='yinpin':
+        typnum=14
+    elif dyn_type=='normal':
+        typnum=17
+        rid=Dynamic_id
+    else:
+        notime=True
+        printp('动态类型有误！')
+        notime=False
+        return False
     link1 = 'http://api.bilibili.com/x/v2/reply?&jsonp=json&pn='
-    link2 = '&type=11&oid='
+    link2 = '&type='+str(typnum)+'&oid='
     link3 = '&sort=2'#&_=1570498003332'
     global PLidDict
     #comment_list = []
@@ -282,7 +305,7 @@ def getPL(Dynamic_id):
     r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
     json_data = json.loads(r)
     #print(json_data)
-    if json_data['code']==-404:
+    '''if json_data['code']==-404:
         outrb()
         printp('正在获取完整评论列表……(模式二)')
         rid=Dynamic_id
@@ -292,10 +315,20 @@ def getPL(Dynamic_id):
         json_data = json.loads(r)
         #print(json_data)
         if json_data['code']==-404:
-            notime=True
-            printp('获取评论失败,可能因为此动态没有除UP主自己的评论以外的评论呢')
-            notime=False
-            return False
+            outrb()
+            printp('正在获取完整评论列表……(模式三)')
+            rid=old_rid
+            #print(rid)
+            link2 = '&type=1&oid='
+            r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
+            json_data = json.loads(r)
+            #print(json_data)
+            '''
+    if json_data['code']==-404:
+        notime=True
+        printp('获取评论失败，可能因为此动态没有除UP主自己的评论以外的评论呢')
+        notime=False
+        return False
     if json_data['code']==-412:
         notime=True
         printp('获取评论失败，调取间隔过短，请过一段时间再试吧~')
@@ -362,6 +395,12 @@ def getDZ(dyid):
     r=gethtml(likelisturl(1),header)
     errortime=1
     userlist_dict=json.loads(r)
+    if userlist_dict['code']==-412:
+        notime=True
+        outrb()
+        printp('获取点赞失败，调取间隔过短，请过一段时间再试吧~')
+        notime=False
+        return False
     jdata=userlist_dict['data']
     jlist=jdata['item_likes']
     totalfans=jdata.get('total_count')
@@ -411,7 +450,7 @@ def getDZ(dyid):
     printp('完成，共收集到 '+str(len(userlist_1))+' 位用户')
     return userlist_1
 
-def getname_old(users):
+'''def getname_old(users):
     #获取用户名
     global ATuser
     times=0
@@ -435,7 +474,7 @@ def getname_old(users):
         printp(str(times+1)+' '+uname+' (UID:'+str(mid)+')')
         if NEEDAT:
             ATuser.append('@'+uname)
-        times=times+1
+        times=times+1'''
 
 def getname(users,userdict):
     global ATuser
@@ -450,7 +489,8 @@ def getname(users,userdict):
     for i in users:
         uname=userdict[i]
         printp(str(times)+' '+uname+' (UID:'+str(i)+')')
-        if EnaSuoYin:
+        tiao_jian=bool(chk2_state.get())or bool(chk1_state.get())
+        if EnaSuoYin and tiao_jian:
             try:
                 printp('>>对应动态链接：https://t.bilibili.com/'+str(ZFidDict[i]))
             except:
@@ -774,8 +814,10 @@ def clicked0():
     global noDisplayUser1
     global RaffleBeginTime
     global EnaSuoYin
+    global NeedFollowOther
     global ZFidDict
     global PLidDict
+    global dyn_type
     RaffleBeginTime=time.localtime()
     bar['value']=0
     barval=0
@@ -810,7 +852,7 @@ def clicked0():
         #printp('')
         return False
     dyinfoo=''
-    if len(str(dyid))<16:
+    if len(str(dyid))<13:
         try:
             header={
             "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
@@ -824,7 +866,7 @@ def clicked0():
         except:
             tkinter.messagebox.showwarning("提示", '输入的动态ID长度不够 ('+str(len(str(dyid)))+'/'+'18) ！')
             return False
-    elif len(str(dyid))==17 or len(str(dyid))==16:
+    elif len(str(dyid))<=17 or len(str(dyid))>=13:
         try:
             header={
             "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
@@ -888,6 +930,8 @@ def clicked0():
         bar.start(2)
         barval=0
         BarProgress(10)
+    if NeedFollowOther and len(NeedFollowOtherList)==0:
+        NeedFollowOther=False
     TZF2=repBool(TZF)
     TPL2=repBool(TPL)
     TDZ2=repBool(TDZ)
@@ -971,11 +1015,13 @@ def clicked0():
     #bar['value']=30
     BarProgress(30)
     dyid=str(dyid)
+    dyn_type='normal'
     if not dyinfoo=='':
         notime=True
         changelink(dyinfoo['dynamic_id'])
         printp('<将相簿ID('+str(dyid)+')转换为动态ID>')
         dyid=str(dyinfoo['dynamic_id'])
+        dyn_type='xiangbu'
     notime=False
     printp('正在获取动态详情……')
     try:
@@ -991,6 +1037,33 @@ def clicked0():
         dycard=json.loads(dyinfo['card']['card'])
         notime=True
         outrb()
+        try:
+            if dycard['aid']!=None:
+                printp('<检测到视频稿件动态(av'+str(dycard['aid'])+')>')#，B站可能会对此类稿件限流!')
+                dycard['item']['reply']=dycard['stat']['reply']
+                dyn_type='shipin'
+        except:
+            pass
+        try:
+            if dycard['id']!=None and 'summary' in dycard.keys():
+                printp('<检测到专栏稿件动态(cv'+str(dycard['id'])+')>')
+                dycard['item']['reply']=dycard['stats']['reply']
+                dyn_type='zhuanlan'
+        except:
+            pass
+        try:
+            if dycard['id']!=None and 'intro' in dycard.keys():
+                printp('<检测到音频稿件动态(au'+str(dycard['id'])+')>')
+                dycard['item']['reply']=dycard['replyCnt']
+                dyn_type='yinpin'
+        except:
+            pass
+        try:
+            if dycard['item']['id']!=None and 'category' in dycard['item'].keys() and dyinfoo=='':
+                printp('<检测到相簿动态('+str(dycard['item']['id'])+')>')
+                dyn_type='xiangbu'
+        except:
+            pass
         printp('-------------------------------------------')
         printp('动态ID:'+dyid+' '+checkTJ(dyinfo['card']['card']))
         printp('动态发送者：'+str(dyinfo['card']['desc']['user_profile']['info']['uname'])+'\n浏览：'+str(dyinfo['card']['desc']['view'])+'，转发：'+str(dyinfo['card']['desc']['repost'])+'，评论：'+str(dycard['item']['reply'])+'，点赞：'+str(dyinfo['card']['desc']['like']))
@@ -1006,7 +1079,7 @@ def clicked0():
             #return False
         try:
             lottdata=json.loads(dyinfo['card']['extension']['lott'])
-            printp('此动态已经存在官方抽奖功能!抽奖ID:'+str(lottdata['lottery_id']))
+            printp('此动态已经存在官方官方抽奖工具!抽奖ID:'+str(lottdata['lottery_id']))
             return False
         except:
             pass
@@ -1036,7 +1109,11 @@ def clicked0():
     #bar['value']=40
     notime=True
     if TZF and dyinfo['card']['desc']['repost']>550:
-        printp('警告：转发数量超过550的部分可能无法被完全统计!')
+        printp('警告：转发数量超过550的部分可能获取不完整!')
+    if TPL and dycard['item']['reply']>8000:
+        printp('警告：评论数量超过8000的部分如继续获取可能被限制!')
+    if TDZ and dyinfo['card']['desc']['like']>20000:
+        printp('警告：点赞数量超过25000的部分如继续获取可能被限制!')
     printp('')
     Error=False
     BarProgress(40)
@@ -1054,8 +1131,8 @@ def clicked0():
         if dycard['item']['reply']==0:
             printp('这条动态没有任何用户评论!')
             Error=True
-        if dycard['item']['reply']>20000:
-            printp('评论限制在20000条以内!')
+        if dycard['item']['reply']>30000:
+            printp('评论限制在30000条以内!')
             Error=True
         if HJNUM>dycard['item']['reply']:
             printp('设置的获奖者总数大于这条动态的评论数!')
@@ -1128,6 +1205,7 @@ def clicked0():
     printp('')
     notime=False
     printp('已获取到符合要求的参与者数量为：'+str(len(list(LBALL))))
+    #print(GLCJH,NeedFollowOther)
     if GLCJH or NeedFollowOther:
         notime=True
         printp('注意：依据抽奖设定所需获取数据较多，请耐心等待')
@@ -1274,7 +1352,7 @@ def clicked4():
     img = qr.make_image()
     img.save('qrcode.png')
     login2window = tk.Toplevel(window)
-    login2window.title('使用B站客户端扫描登录')
+    login2window.title('使用B站客户端扫码登录')
     width = 294
     heigh = 286
     screenwidth = login2window.winfo_screenwidth()
@@ -1641,6 +1719,9 @@ NeedFollowOther=False
 NeedHaveLiveRoom=False
 NeedFollowOtherList=[]
 def clicked11():
+    if cjthread.is_alive():
+        tkinter.messagebox.showwarning("提示", '请等待抽奖结束后再进行调整！')
+        return False
     global more1window
     global motxt1
     global mochk1_state
@@ -1677,7 +1758,7 @@ def clicked11():
     molbl1.place(x=4, y=65)
     molbl1.configure(bg='white')
     motxt1 = ttk.Entry(more1window, width=40)
-    motxt1.place(x=10, y=86)
+    motxt1.place(x=11, y=86)
     nfol=NeedFollowOtherList
     while '' in nfol:
         nfol.remove('')
@@ -1694,13 +1775,12 @@ def clicked11():
     mobtn3 = ttk.Button(more1window, text="读取动态at", command=clicked14)
     mobtn3.place(x=100, y=112)
     mobtn1 = ttk.Button(more1window, text="保存并检测", command=clicked12)
-    mobtn1.place(x=210, y=112)
+    mobtn1.place(x=211, y=112)
     more1window.lift()
     more1window.grab_set()
     more1window.mainloop()
 
-def clicked11_old():
-    '''
+'''def clicked11_old():
     global more1window
     global motxt1
     global mochk1_state
@@ -1753,7 +1833,6 @@ def clicked11_old():
     more1window.lift()
     more1window.grab_set()
     more1window.mainloop()'''
-    pass
 
 def clicked13():
     global more2window
@@ -2011,6 +2090,223 @@ def clicked16_2():
         motxt1['state']='disabled'
     more3window.destroy()
 
+def clicked17():
+    global aid1window
+    global aidtxt
+    global aidoutput
+    global aidbtn2
+    global aidlbl2
+    aid1window = tk.Toplevel(window)
+    aid1window.title('转换稿件编号')
+    aid1window.configure(bg='white')
+    aid1window.transient(window) 
+    width = 376
+    heigh = 290
+    screenwidth = aid1window.winfo_screenwidth()
+    screenheight = aid1window.winfo_screenheight()-50
+    aid1window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
+    aid1window.resizable(0,0)
+    aidlbl1= tk.Label(aid1window, text="输入稿件编号或稿件链接（av/BV/cv/au）",bg='white')
+    aidlbl1.place(x=10, y=10)
+    #login4window.configure(bg='white')
+    try:
+        login4window.iconbitmap('icon.ico')
+    except:
+        try:
+            setIcon(aid1window)
+        except:
+            pass
+    aidtxt = ttk.Entry(aid1window, width=50)
+    aidtxt.place(x=10, y=30)
+    aidbtn1 = ttk.Button(aid1window, text="转换", command=clicked17_2)
+    aidbtn1.place(x=146, y=60)
+    aidoutput = scrolledtext.ScrolledText(aid1window, width=48, height=9, relief="solid")
+    aidoutput.place(x=10, y=94)
+    aidoutput['state']='disabled'
+    aidbtn2 = ttk.Button(aid1window, text="插入", command=clicked17_3)
+    aidbtn2.place(x=146, y=255)
+    aidbtn2.state(['disabled'])
+    aidlbl2= tk.Label(aid1window, text="动态ID：无",bg='white',justify='center')
+    aidlbl2.place(relx = 0.5, rely = 0.81, anchor = "center")
+    aid1window.lift()
+    aid1window.grab_set()
+
+class bvconv:
+    def dec(x):
+        table='fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
+        tr={}
+        for i in range(58):
+                tr[table[i]]=i
+        s=[11,10,3,8,4,6]
+        xor=177451812
+        add=8728348608
+        r=0
+        for i in range(6):
+                r+=tr[x[s[i]]]*58**i
+        return (r-add)^xor
+
+def cookie_to_json(cookies_str):
+    cookies_dict={}
+    for cookie in cookies_str.replace(' ','').split(';'):
+        cookies_dict[cookie.split('=')[0]]=cookie.split('=')[-1]
+    return cookies_dict
+
+def linktoaid(dyid):
+    #转换t.bilibili.com格式链接为动态id 备用正则/[0-9]{18}/
+    if "www.bilibili.com/" in dyid and '#' in dyid:
+        dyid, sep, tail = dyid.partition('#')
+        dyid, sep, tail = dyid.partition('?')
+        dyid=dyid[dyid.rfind('/'):]
+        head, sep, dyid = dyid.partition('/')
+    elif "www.bilibili.com/" in dyid:
+        dyid, sep, tail = dyid.partition('?')
+        dyid=dyid[dyid.rfind('/'):]
+        head, sep, dyid = dyid.partition('/')
+    else:
+        return dyid
+    return dyid
+
+def clicked17_2():
+    aidoutput['state']='normal'
+    aidoutput.delete(1.0, tk.END)
+    aidoutput['state']='disabled'
+    aidlbl2.configure(text='动态ID：无')
+    aidbtn2['state']=tk.DISABLED
+    aid_in=aidtxt.get()
+    if aid_in=='':
+        tkinter.messagebox.showwarning("提示", '您未输入任何内容！')
+        return False
+    if 'www.bilibili.com' in aid_in:
+        anum=linktoaid(aid_in)
+    else:        
+        anum=aid_in
+    atype=anum[:2]
+    aid=anum[2:]
+    if atype=='av':
+        sharetype='8'
+    elif atype=='BV':
+        sharetype='8'
+        aid=bvconv.dec(anum)
+        anum='av'+str(aid)
+    elif atype=='cv':
+        sharetype='64'
+    elif atype=='au':
+        sharetype='256'
+    else:
+        tkinter.messagebox.showwarning("提示", '稿件类型不正确！')
+        return False
+    try:
+        cook=open('cookie.txt','r')
+        cookie=cook.read()
+        cook.close()
+        cookiepath='cookie.txt'
+    except:
+        try:
+            cookiepath=askopenfilename(title='选择一个包含cookie的文本文件',initialdir=os.path.dirname(os.path.realpath(sys.argv[0])), filetypes=[('Cookie File','*.txt')])
+            cook=open(cookiepath,'r')
+            cookie=cook.read()
+            cook.close()
+        except:
+            tkinter.messagebox.showinfo("提示", '本功能需要登录，请点击“登录/Cookie操作”按钮进行登录！')
+            return False
+    cook=open(cookiepath,'r')
+    cookie=cook.read()
+    cook.close()
+    if 'ENCRYPTED\n' in cookie:
+        tkinter.messagebox.showwarning("提示", '请将cookie文件解密后重试!')
+        decrycook(cookiepath)
+        return False
+    try:
+        header={
+        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+        "Cookie":cookie,
+        }
+        r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header).text
+        userinfo_dict=json.loads(r)
+        #print(r)
+        jdata=userinfo_dict['data']
+        myuid=jdata.get('mid')
+        name=str(jdata.get('name'))
+        level=jdata.get('level')
+        coins=jdata.get('coins')
+        needexp=str(jdata['level_exp']['next_exp']-jdata['level_exp']['current_exp'])
+        isLogin=True
+    except:
+        try:
+            if userinfo_dict['code']==-412:
+                tkinter.messagebox.showinfo("提示", '模拟登录失败，请求间隔过短，请过一段时间后重试!')
+                return False
+        except:
+            pass
+        tkinter.messagebox.showinfo("提示", '模拟登录失败，可能是cookie无效，已过期或未登录，请重新获取cookie!')
+        return False
+    aidprint('即将开始获取稿件动态ID……')
+    aidprint('>>尝试分享'+anum+'……')
+    cookie_dict=cookie_to_json(cookie)
+    csrf_token=cookie_dict.get('bili_jct')
+    data={
+    'csrf':csrf_token,
+    "csrf_token":csrf_token,
+    "platform":'pc',
+    'uid':'2',
+    'type':sharetype,
+    'share_uid':myuid,
+    'content':'',
+    'repost_code':'20000',
+    'rid':aid,
+    }
+    res = requests.post(url='https://api.vc.bilibili.com/dynamic_repost/v1/dynamic_repost/share',data=data,headers=header)
+    #aidprint(res.text)
+    message=json.loads(res.text)
+    if (message['code'] == 0):
+        share_dynid=message['data']['dynamic_id_str']
+        aidprint('>>动态分享成功，动态ID：'+share_dynid)
+    else:
+        aidprint('>>动态分享失败，返回信息为：'+message['message'])
+        return False
+    aidprint('>>获取动态详情('+str(share_dynid)+')……')
+    r=requests.get('https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+str(share_dynid)).text
+    message=json.loads(r)
+    if (message['code'] == 0):
+        global adynid
+        adynid=message['data']['card']['desc']['orig_dy_id_str']
+        if str(adynid)!='0':
+            aidprint('>>稿件('+str(anum)+')对应动态获取成功\n>>>动态ID：'+str(adynid))
+            aidlbl2.configure(text='动态ID：'+str(adynid))
+            aidbtn2['state']=tk.NORMAL
+        else:
+            aidprint('>>注意：稿件('+str(anum)+')对应动态ID为空值('+str(adynid)+')!')
+    else:
+        aidprint('>>获取失败，返回信息为：'+message['message'])
+    aidprint('>>尝试删除刚才的动态('+str(share_dynid)+')……')
+    data={
+    'dynamic_id':share_dynid,
+    "csrf":csrf_token,
+    'csrf_token':csrf_token,
+    }
+    res = requests.post('https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/rm_dynamic?csrf='+csrf_token,data=data,headers=header)
+    message=json.loads(res.text)
+    if (message['code'] == 0):
+        aidprint('>>动态删除成功')
+    else:
+        aidprint('>>删除动态失败，返回信息为：'+message['message'])
+    return False
+
+def clicked17_3():
+    if txt.get()!='':
+        usr_choice=tkinter.messagebox.askyesno('提示','动态ID输入框已有内容，是否覆盖？')
+        if not usr_choice:
+            return False
+    changelink(adynid)
+    aid1window.destroy()
+
+def aidprint(text):
+    aidoutput['state']='normal'
+    aidoutput.insert('end',str(text)+'\n')
+    aidoutput['state']='disabled'
+    aidoutput.see(tk.END)
+    aid1window.update()
+
 window = tk.Tk()#初始化一个窗口
 window.title('B站动态抽奖工具 Python GUI版 '+version+' 演示视频av247587107 按下F1可查看按键操作说明')#标题 By: 芍芋 '+updatetime+' 
 window.configure(bg='white')#背景颜色
@@ -2175,7 +2471,9 @@ btn4.bind_all('<F11>', lambda a:pressbutton2(btn4,clicked9))
 btn4.place(x=10, y=295)
 btn2 = ttk.Button(window, text="关于本程序", command=clicked2)
 btn2.bind_all('<F1>', lambda a:pressbutton(clickedkeyhelp))
-btn2.place(x=228, y=258)
+btn2.place(x=228, y=221)
+btn5 = ttk.Button(window, text="转换稿件编号", command=clicked17)
+btn5.place(x=228, y=258)
 #btn2.configure(style="TButton")
 btn3 = ttk.Button(window, text="登录/Cookie操作", command=clicked3)
 btn3.bind_all('<F12>', lambda a:pressbutton(clicked3))
