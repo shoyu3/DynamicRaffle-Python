@@ -27,8 +27,8 @@ except:
     pass
 #打包成exe所需的库
 
-version='1.3.0.021'
-updatetime='2021-05-07'
+version='1.3.1.022'
+updatetime='2021-05-11'
 
 class NullClass:
     def is_alive(N):
@@ -101,7 +101,7 @@ def chkupd():
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
     }
     try:
-        r=requests.get('https://api.github.com/repos/shoyu3/DynamicRaffle-Python/releases/latest',headers=header)
+        r=requests.get('http://api.github.com/repos/shoyu3/DynamicRaffle-Python/releases/latest',headers=header)
         gitreturn=json.loads(r.text)
         gitversion=gitreturn['name']
         gitver=gitversion[gitversion.rfind('.'):]
@@ -171,11 +171,11 @@ def gethtml(url, header):
             html.encoding = "utf-8"
             return html.text
         except requests.exceptions.RequestException:
-            printp('警告：超时'+str(i+1)+'次，位于'+str(errortime)+'页')
+            printp('警告：超时'+str(i+1)+'次')
             i += 1
 
 #=============================================================#
-#部分代码思路来自项目：https://github.com/LeoChen98/BiliRaffle#
+#部分代码思路参考项目：https://github.com/LeoChen98/BiliRaffle#
 #=============================================================#
 
 def now_time():
@@ -190,7 +190,7 @@ def _get_offset(data_json):
     else:
         return None
 
-def getZF(dyn_id):
+def getZF(dyn_id,*_Chong_Fu_):
     global RZOFF
     global ZFidDict
     printp('正在获取完整转发列表……')
@@ -208,6 +208,7 @@ def getZF(dyn_id):
     offset = "1:0"
     param = {'dynamic_id': dyn_id, 'offset': offset}
     data = httpsession.get(dynamic_api, headers=header, params=param, timeout=10)
+    data.encoding='utf-8'
     data_json = json.loads(data.text)
     if data_json['code']==-412:
         notime=True
@@ -227,6 +228,7 @@ def getZF(dyn_id):
     while now_num < total_num:  # 循环获取页面
         param = {'dynamic_id': dyn_id, 'offset': offset}
         data = httpsession.get(dynamic_api, headers=header, params=param)
+        data.encoding='utf-8'
         data_json = json.loads(data.text)
         #print(len(str(data_json)))
         #print(data_json['data']['items'][0]['desc']['user_profile']['info']['uname'])
@@ -238,8 +240,16 @@ def getZF(dyn_id):
                     zfdyid=data_json['data']['items'][i]['desc']['dynamic_id']
                     uname = data_json['data']['items'][i]['desc']['user_profile']['info']['uname']
                     uidall[uid]=uname
-                    if EnaSuoYin:
+                    if EnaSuoYin and not _Chong_Fu_:
                         ZFidDict[uid]=zfdyid
+                    if _Chong_Fu_:
+                        if not uid in ZFidDict.keys():
+                            ZF_dyid_list=[]
+                            ZF_dyid_list.append(zfdyid)
+                        else:
+                            ZF_dyid_list=ZFidDict[uid]
+                            ZF_dyid_list.append(zfdyid)
+                        ZFidDict[uid]=ZF_dyid_list
                     outrb()
                     curusr=len(uidall)
                     percent='%.2f' % float(curusr/total_num*100)
@@ -253,13 +263,14 @@ def getZF(dyn_id):
         if offset is None:
             break
         now_num += 20
-        time.sleep(0.5)
+        #time.sleep(0.5)
     #uidall=list(set(uidall))
     #uidall.sort()
-    try:
-        del uidall[myuid]
-    except:
-        pass
+    if not _Chong_Fu_:
+        try:
+            del uidall[myuid]
+        except:
+            pass
     outrb()
     '''curusr=len(uidall)
     printp('100.00% ('+str(curusr)+'/'+str(curusr)+')')'''
@@ -268,7 +279,7 @@ def getZF(dyn_id):
     printp('完成，共收集到 '+str(len(uidall))+' 位用户')
     return uidall
 
-def getPL(Dynamic_id):
+def getPL(Dynamic_id,*_Chong_Fu_):
     global notime
     global RZOFF
     printp('正在获取完整评论列表……')
@@ -343,10 +354,28 @@ def getPL(Dynamic_id):
         json_data1 = json.loads(r)
         #print(len(str(json_data1)))
         if json_data1['data']['replies']:
-            if EnaSuoYin:
+            if EnaSuoYin and not _Chong_Fu_:
                 for reply in json_data1['data']['replies']:
                     userlist_1[int(reply['member']['mid'])]=reply['member']['uname']
                     PLidDict[int(reply['member']['mid'])]=reply['rpid']
+                    outrb()
+                    curusr=len(userlist_1)
+                    percent='%.2f' % float(curusr/comments_num*100)
+                    BarProgress(55+15*float(curusr/comments_num))
+                    printp(str(percent)+'% ('+str(curusr)+'/'+str(comments_num)+')')
+            elif _Chong_Fu_:
+                for reply in json_data1['data']['replies']:
+                    userlist_1[int(reply['member']['mid'])]=reply['member']['uname']
+                    uid=int(reply['member']['mid'])
+                    plrpid=reply['rpid']
+                    if not uid in PLidDict.keys():
+                        PL_rpid_list=[]
+                        PL_rpid_list.append(plrpid)
+                    else:
+                        PL_rpid_list=PLidDict[uid]
+                        PL_rpid_list.append(plrpid)
+                    PLidDict[uid]=PL_rpid_list
+                    #PLidDict[int(reply['member']['mid'])]=reply['rpid']
                     outrb()
                     curusr=len(userlist_1)
                     percent='%.2f' % float(curusr/comments_num*100)
@@ -365,10 +394,11 @@ def getPL(Dynamic_id):
             break
     #userlist_1=list(set(userlist_1))
     #userlist_1.sort()
-    try:
-        del userlist_1[myuid]
-    except:
-        pass
+    if not _Chong_Fu_:
+        try:
+            del userlist_1[myuid]
+        except:
+            pass
     outrb()
     '''curusr=len(userlist_1)
     printp('100.00% ('+str(curusr)+'/'+str(curusr)+')')'''
@@ -489,7 +519,7 @@ def getname(users,userdict):
     for i in users:
         uname=userdict[i]
         printp(str(times)+' '+uname+' (UID:'+str(i)+')')
-        tiao_jian=bool(chk2_state.get())or bool(chk1_state.get())
+        tiao_jian=bool(chk2_state.get()) or bool(chk1_state.get())
         if EnaSuoYin and tiao_jian:
             try:
                 printp('>>对应动态链接：https://t.bilibili.com/'+str(ZFidDict[i]))
@@ -595,6 +625,7 @@ def checklvl(mid, HJlvl):
         "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/75.0.4324.182 Safari/537.36",
         }
         res = requests.get(url=url,headers=header)
+        res.encoding='utf-8'
         resback=json.loads(res.text)
         usrinfo=resback.get('data')
         try:
@@ -624,6 +655,7 @@ def get_same_follow(vmid):
     "Cookie":cookie,
     }
     r=requests.get('http://api.bilibili.com/x/relation/same/followings?pn=1&vmid='+str(vmid),headers=header).text
+    r.encoding='utf-8'
     try:
         jdata=json.loads(r)['data']
         total_num=jdata['total']
@@ -631,6 +663,7 @@ def get_same_follow(vmid):
         times=1
         while times<=pages:
             r=requests.get('http://api.bilibili.com/x/relation/same/followings?pn='+str(times)+'&vmid='+str(vmid),headers=header).text
+            r.encoding='utf-8'
             try:
                 jlist=json.loads(r)['data']['list']
                 for i in range(len(jlist)):
@@ -673,6 +706,7 @@ def checkZBJ(mid):
         "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/75.0.4324.182 Safari/537.36",
         }
         res = requests.get(url=url,headers=header)
+        res.encoding='utf-8'
         resback=json.loads(res.text)
         usrinfo=resback.get('data')
         try:
@@ -713,8 +747,10 @@ def linktodyid(dyid):
 
 def clicked():
     btn['state']=tk.DISABLED
+    btn7['state']=tk.DISABLED
     global cjthread
     btn.configure(text="进行中…",bg='ivory')
+    btn7.configure(text="(等待当前任务)")
     cjthread=threading.Thread(target=clicked0,args=())
     cjthread.start()
     thread2=threading.Thread(target=checkthread,args=(cjthread,))
@@ -732,7 +768,9 @@ def checkthread(thread):
     #bar['value']=100
     barp.configure(text=str(int(bar['value']))+'%')
     btn['state']=tk.NORMAL
+    btn7['state']=tk.NORMAL
     btn.configure(text="开始抽奖!",bg='deepskyblue')
+    btn7.configure(text="转发/评论查重")
 
 def BarProgress(num):
     global barval
@@ -764,7 +802,7 @@ def checkTJ(dycont):
         PL='评'
     if '赞' in dycont or '点赞' in dycont:
         DZ='赞'
-    if '关' in dycont or '关注' in dycont:
+    if '关' in dycont or '关注' in dycont or '粉丝' in dycont:
         if not '关于' in dycont:
             GZ='关'
         elif '关注' in dycont:
@@ -848,7 +886,10 @@ def clicked0():
         dyid=linktodyid(txt.get())
         dyid=int(dyid)
     except:
-        tkinter.messagebox.showwarning("提示", '输入的动态链接或动态ID无法识别！')
+        if 'www.bilibili.com/' in dyid:
+            tkinter.messagebox.showwarning("提示", '如使用视频/专栏/音频抽奖请点击“转换稿件编号”进行转换！')
+        else:
+            tkinter.messagebox.showwarning("提示", '输入的动态链接或动态ID无法识别！')
         #printp('')
         return False
     dyinfoo=''
@@ -857,7 +898,7 @@ def clicked0():
             header={
             "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
             }
-            url='https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?type=2&rid='+str(dyid)
+            url='http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?type=2&rid='+str(dyid)
             res = requests.get(url=url,headers=header)
             res.encoding='utf-8'
             resback=json.loads(res.text)
@@ -866,18 +907,18 @@ def clicked0():
         except:
             tkinter.messagebox.showwarning("提示", '输入的动态ID长度不够 ('+str(len(str(dyid)))+'/'+'18) ！')
             return False
-    elif len(str(dyid))<=17 or len(str(dyid))>=13:
+    elif len(str(dyid))<=17 and len(str(dyid))>=13:
         try:
             header={
             "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
             }
-            url='https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+str(dyid)
+            url='http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+str(dyid)
             res = requests.get(url=url,headers=header)
             res.encoding='utf-8'
             resback=json.loads(res.text)
             dyinfo=resback['data']['card']
         except Exception as e:
-            print(e)
+            #print(e)
             tkinter.messagebox.showwarning("提示", '输入的动态ID长度不够 ('+str(len(str(dyid)))+'/'+'18) ！')
             return False
     elif len(str(dyid))>18:
@@ -937,7 +978,8 @@ def clicked0():
     TDZ2=repBool(TDZ)
     TGZ2=repBool(TGZ)
     TGZ3=repBool(NeedFollowOther)
-    printp('转发：'+str(TZF2)+' 评论：'+str(TPL2)+' 点赞：'+str(TDZ2)+' 关注自己：'+str(TGZ2)+'\n关注其他：'+str(TGZ3)+' 最低等级：'+str(HJlvl)+' 抽奖号阈值：'+str(CJHnum))
+    TZBJ=repBool(NeedHaveLiveRoom)
+    printp('转发：'+str(TZF2)+' 评论：'+str(TPL2)+' 点赞：'+str(TDZ2)+' 关注自己：'+str(TGZ2)+' 关注其他：'+str(TGZ3)+'\n开通直播间：'+str(TZBJ)+' 最低等级：'+str(HJlvl)+' 抽奖号阈值：'+str(CJHnum))
     if CJHnum!=-1:
         GLCJH=True
     else:
@@ -987,6 +1029,7 @@ def clicked0():
             "Cookie":cookie,
             }
             r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header).text
+            r.encoding='utf-8'
             userinfo_dict=json.loads(r)
             #print(r)
             jdata=userinfo_dict['data']
@@ -1002,7 +1045,7 @@ def clicked0():
             else:
                 printp('模拟登录成功：'+name+'(UID:'+str(myuid)+')')#，用户名：')                
             isLogin=True
-        except:
+        except Exception as e:
             try:
                 if userinfo_dict['code']==-412:
                     printp('模拟登录失败，请求间隔过短，请过一段时间后重试!')
@@ -1010,7 +1053,7 @@ def clicked0():
             except:
                 pass
             printp('模拟登录失败，可能是cookie无效，已过期或未登录，请重新获取cookie!')
-            return False
+            print(str(repr(e)))
     #dyid=input('输入动态ID：')
     #bar['value']=30
     BarProgress(30)
@@ -1028,7 +1071,7 @@ def clicked0():
         header={
         "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
         }
-        url='https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+dyid
+        url='http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+dyid
         res = requests.get(url=url,headers=header)
         res.encoding='utf-8'
         resback=json.loads(res.text)
@@ -1103,9 +1146,10 @@ def clicked0():
         except:
             printp('(未接收到任何信息)')
         return False
-    if not isLogin:
-        myuid=dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')
-    printp('准备开始抽取……\n(抽取时将自动过滤UP主自己和重复转发/评论的用户)')
+    '''if not isLogin:
+        myuid=dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')'''
+    myuid=dyinfo['card']['desc']['user_profile']['info']['uid']
+    printp('开始获取数据……\n(抽取时将自动过滤UP主自己和重复转发/评论的用户)')
     #bar['value']=40
     notime=True
     if TZF and dyinfo['card']['desc']['repost']>550:
@@ -1288,6 +1332,410 @@ def clicked0():
         printp('提示：可以按下 Command+Shift+4 保存局部截图')
     notime=False
     return True
+
+def clicked18():
+    btn['state']=tk.DISABLED
+    btn7['state']=tk.DISABLED
+    global cjthread2
+    btn.configure(text="(等待当前任务)",bg='ivory')
+    btn7.configure(text="进行中…")
+    cjthread2=threading.Thread(target=clicked18_2,args=())
+    cjthread2.start()
+    thread2=threading.Thread(target=checkthread2,args=(cjthread2,))
+    thread2.start()
+
+def checkthread2(thread):
+    global notime
+    while True:
+        if not thread.is_alive():
+            break
+        time.sleep(0.1)
+    if not barval==100:
+        bar.stop()
+    bar['value']=barval
+    #bar['value']=100
+    barp.configure(text=str(int(bar['value']))+'%')
+    btn['state']=tk.NORMAL
+    btn7['state']=tk.NORMAL
+    btn.configure(text="开始抽奖!",bg='deepskyblue')
+    btn7.configure(text="转发/评论查重")
+
+def clicked18_2():
+    global notime
+    global dyid
+    global dyinfo
+    global myuid
+    global cookie
+    global cookiepath
+    global TGZ
+    global RZtxt
+    global EnaRZ
+    global RZOFF
+    global rzpath
+    global GLCJH
+    global GLlvl
+    global barval
+    global noDisplayUser1
+    global RaffleBeginTime
+    global EnaSuoYin
+    global NeedFollowOther
+    global ZFidDict
+    global PLidDict
+    global dyn_type
+    global LoginUID
+    RaffleBeginTime=time.localtime()
+    bar['value']=0
+    barval=0
+    barp.configure(text='0%')
+    btn4.state(['disabled'])
+    #print()
+    TZF=bool(chk1_state.get())
+    TPL=bool(chk2_state.get())
+    TGZ=NeedFollowSelf
+    ZFidDict={}
+    PLidDict={}
+    EnaSuoYin=bool(chk9_state.get())
+    output['state']='normal'
+    output.delete(1.0, tk.END)
+    output['state']='disabled'
+    notime=True
+    printp(updinfo)
+    notime=False
+    if txt.get()=='':
+        tkinter.messagebox.showwarning("提示", '需要输入动态链接或动态ID！')
+        return False
+    try:
+        dyid=linktodyid(txt.get())
+        dyid=int(dyid)
+    except:
+        if 'www.bilibili.com/' in dyid:
+            tkinter.messagebox.showwarning("提示", '如使用视频/专栏/音频抽奖请点击“转换稿件编号”进行转换！')
+        else:
+            tkinter.messagebox.showwarning("提示", '输入的动态链接或动态ID无法识别！')
+        #printp('')
+        return False
+    dyinfoo=''
+    if len(str(dyid))<13:
+        try:
+            header={
+            "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+            }
+            url='http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?type=2&rid='+str(dyid)
+            res = requests.get(url=url,headers=header)
+            res.encoding='utf-8'
+            resback=json.loads(res.text)
+            dyinfoo=resback['data']['card']['desc']
+            #tkinter.messagebox.showinfo("提示", '已将相簿ID还原为动态ID，请再次开始抽奖！')
+        except:
+            tkinter.messagebox.showwarning("提示", '输入的动态ID长度不够 ('+str(len(str(dyid)))+'/'+'18) ！')
+            return False
+    elif len(str(dyid))<=17 and len(str(dyid))>=13:
+        try:
+            header={
+            "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+            }
+            url='http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+str(dyid)
+            res = requests.get(url=url,headers=header)
+            res.encoding='utf-8'
+            resback=json.loads(res.text)
+            dyinfo=resback['data']['card']
+        except Exception as e:
+            #print(e)
+            tkinter.messagebox.showwarning("提示", '输入的动态ID长度不够 ('+str(len(str(dyid)))+'/'+'18) ！')
+            return False
+    elif len(str(dyid))>18:
+        tkinter.messagebox.showwarning("提示", '输入的动态ID过长 ('+str(len(str(dyid)))+'/'+'18) ！')
+        return False
+    LBGZ=[]
+    LBZF=[]
+    LBPL=[]
+    LBDZ=[]
+    errortime=1
+    notime=False
+    isLogin=False
+    EnaRZ=False
+    RZOFF=False
+    notime=True
+    LoginUID=''
+    noDisplayUser1=(chk8_state.get())
+    if not TZF and not TPL:#not TGZ and
+        tkinter.messagebox.showwarning("提示", '至少需要选择转发或评论的其中一个！')
+        return False
+    TZF2=repBool(TZF)
+    TPL2=repBool(TPL)
+    TGZ2=repBool(TGZ)
+    printp('转发：'+str(TZF2)+' 评论：'+str(TPL2)+' 检测自己：'+str(TGZ2))
+    notime=False
+    if TGZ:
+        try:
+                cook=open('cookie.txt','r')
+                cookie=cook.read()
+                cook.close()
+                cookiepath='cookie.txt'
+        except:
+            try:
+                cookiepath=askopenfilename(title='选择一个包含cookie的文本文件',initialdir=os.path.dirname(os.path.realpath(sys.argv[0])), filetypes=[('Cookie File','*.txt')])
+                cook=open(cookiepath,'r')
+                cookie=cook.read()
+                cook.close()
+            except:
+                notime=True
+                printp('检测自己需要登录，请点击“登录/Cookie操作”按钮进行登录！')
+                return False
+        bar.start(2)
+        barval=0
+        BarProgress(10)
+        cook=open(cookiepath,'r')
+        cookie=cook.read()
+        cook.close()
+        if 'ENCRYPTED\n' in cookie:
+            #decrycook(cookiepath)
+            notime=True
+            tkinter.messagebox.showwarning("提示",'需要解密cookie文件！')
+            printp('请将cookie文件解密后重试!')
+            decrycook(cookiepath)
+            return False
+        notime=True
+        #bar['value']=20
+        BarProgress(20)
+        printp('尝试使用预设的cookie进行模拟登录……')
+        try:
+            header={
+            "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+            "Cookie":cookie,
+            }
+            r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header).text
+            userinfo_dict=json.loads(r)
+            #print(r)
+            jdata=userinfo_dict['data']
+            myuid=jdata.get('mid')
+            LoginUID=jdata['mid']
+            name=str(jdata.get('name'))
+            level=jdata.get('level')
+            coins=jdata.get('coins')
+            needexp=str(jdata['level_exp']['next_exp']-jdata['level_exp']['current_exp'])
+            outrb()
+            if DisplayLogInfo:
+                printp('模拟登录成功，UID:'+str(myuid)+'，详情如下\n'+name+'，Lv'+str(level)+'，粉丝数 '+str(jdata['follower'])+'，拥有 '+str(coins)+' 枚硬币')#用户名：'+name+'，等级 '+str(level)+'，拥有 '+str(coins)+' 枚硬币')
+                #printp('模拟登录成功：'+name+'(UID:'+str(myuid)+')，详情如下\n'+'Lv'+str(level)+'(还需'+needexp+')，粉丝数 '+str(jdata['follower'])+'，拥有 '+str(coins)+' 枚硬币')#用户名：'+name+'，等级 '+str(level)+'，拥有 '+str(coins)+' 枚硬币')
+            else:
+                printp('模拟登录成功：'+name+'(UID:'+str(myuid)+')')#，用户名：')                
+            isLogin=True
+        except Exception as e:
+            try:
+                if userinfo_dict['code']==-412:
+                    printp('模拟登录失败，请求间隔过短，请过一段时间后重试!')
+                    return False
+            except:
+                pass
+            printp('模拟登录失败，可能是cookie无效，已过期或未登录，请重新获取cookie!')
+            print(str(repr(e)))
+            return False
+    BarProgress(30)
+    dyid=str(dyid)
+    dyn_type='normal'
+    if not dyinfoo=='':
+        notime=True
+        changelink(dyinfoo['dynamic_id'])
+        printp('<将相簿ID('+str(dyid)+')转换为动态ID>')
+        dyid=str(dyinfoo['dynamic_id'])
+        dyn_type='xiangbu'
+    notime=False
+    printp('正在获取动态详情……')
+    try:
+        header={
+        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
+        }
+        url='http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+dyid
+        res = requests.get(url=url,headers=header)
+        res.encoding='utf-8'
+        resback=json.loads(res.text)
+        dyinfo=resback.get('data')
+        tmstmp=time.localtime(dyinfo['card']['desc']['timestamp'])
+        dycard=json.loads(dyinfo['card']['card'])
+        notime=True
+        outrb()
+        try:
+            if dycard['aid']!=None:
+                printp('<检测到视频稿件动态(av'+str(dycard['aid'])+')>')#，B站可能会对此类稿件限流!')
+                dycard['item']['reply']=dycard['stat']['reply']
+                dyn_type='shipin'
+        except:
+            pass
+        try:
+            if dycard['id']!=None and 'summary' in dycard.keys():
+                printp('<检测到专栏稿件动态(cv'+str(dycard['id'])+')>')
+                dycard['item']['reply']=dycard['stats']['reply']
+                dyn_type='zhuanlan'
+        except:
+            pass
+        try:
+            if dycard['id']!=None and 'intro' in dycard.keys():
+                printp('<检测到音频稿件动态(au'+str(dycard['id'])+')>')
+                dycard['item']['reply']=dycard['replyCnt']
+                dyn_type='yinpin'
+        except:
+            pass
+        try:
+            if dycard['item']['id']!=None and 'category' in dycard['item'].keys() and dyinfoo=='':
+                printp('<检测到相簿动态('+str(dycard['item']['id'])+')>')
+                dyn_type='xiangbu'
+        except:
+            pass
+        printp('-------------------------------------------')
+        printp('动态ID:'+dyid+' '+checkTJ(dyinfo['card']['card']))
+        printp('动态发送者：'+str(dyinfo['card']['desc']['user_profile']['info']['uname'])+'\n浏览：'+str(dyinfo['card']['desc']['view'])+'，转发：'+str(dyinfo['card']['desc']['repost'])+'，评论：'+str(dycard['item']['reply'])+'，点赞：'+str(dyinfo['card']['desc']['like']))
+        printp('发送时间：'+time.strftime("%Y-%m-%d %H:%M:%S", tmstmp))
+        printp('-------------------------------------------')
+        try:
+            lottdata=json.loads(dyinfo['card']['extension']['lott'])
+            printp('此动态已经存在官方官方抽奖工具!抽奖ID:'+str(lottdata['lottery_id']))
+            return False
+        except:
+            pass
+        notime=False
+    except Exception as e:
+        SHEXIT=False
+        try:
+            if TGZ and dyinfo.get('card').get('desc').get('user_profile').get('info').get('uid')!=myuid:
+                SHEXIT=True
+        except:
+            pass
+        if SHEXIT:
+                return False
+        notime=True
+        if str(repr(e))=="KeyError('card')":
+            printp('动态详情为空，可能是动态链接/ID输入有误，请检查')
+        else:
+            printp('获取出错，可能是动态链接/ID输入有误，请检查\n详细报错如下：\n'+str(repr(e)))
+        try:
+            printp('获取到的信息：\n'+res.text)
+        except:
+            printp('(未接收到任何信息)')
+        return False
+    myuid=dyinfo['card']['desc']['user_profile']['info']['uid']
+    printp('开始获取数据……')#\n(抽取时将自动过滤UP主自己和重复转发/评论的用户)')
+    #bar['value']=40
+    notime=True
+    if TZF and dyinfo['card']['desc']['repost']>550:
+        printp('警告：转发数量超过550的部分可能获取不完整!')
+    if TPL and dycard['item']['reply']>8000:
+        printp('警告：评论数量超过8000的部分如继续获取可能被限制!')
+    printp('')
+    Error=False
+    BarProgress(40)
+    if TZF:
+        if dyinfo['card']['desc']['repost']==0:
+            printp('这条动态没有任何用户转发!')
+            Error=True
+        '''if dyinfo['card']['desc']['repost']>600:
+            printp('转发限制在600次以内!')
+            Error=True'''
+    if TPL:
+        if dycard['item']['reply']==0:
+            printp('这条动态没有任何用户评论!')
+            Error=True
+        if dycard['item']['reply']>30000:
+            printp('评论限制在30000条以内!')
+            Error=True
+    if Error:
+        return False
+    LBALL=[]
+    LBALL2={}
+    LBZF=[]
+    LBPL=[]
+    notime=False
+    #BarProgress(40)
+    if TZF:
+        LBZF2=getZF(dyid,True)
+        #print(ZFidDict)
+        try:
+            if not LBZF2:
+                return False
+        except:
+            pass
+        LBZF=list(LBZF2.keys())
+        if len(LBALL)!=0:
+            LBALL=set(LBALL)&set(LBZF)
+            LBALL2=Merge(LBALL2,LBZF2)
+        else:
+            LBALL=set(LBZF)
+            LBALL2=(LBZF2)
+    #bar['value']=50
+    BarProgress(55)
+    if TPL:
+        LBPL2=getPL(dyid,True)
+        #print(PLidDict)
+        try:
+            if not LBPL2:
+                return False
+        except:
+            pass
+        LBPL=list(LBPL2.keys())
+        if len(LBALL)!=0:
+            LBALL=set(LBALL)&set(LBPL)
+            LBALL2=Merge(LBALL2,LBPL2)
+        elif not TZF:
+            LBALL=set(LBPL)
+            LBALL2=LBPL2
+    #bar['value']=60
+    BarProgress(70)
+    #bar['value']=70
+    BarProgress(85)
+    notime=True
+    printp('')
+    notime=False
+    printp('数据收集完成，即将开始检测……')
+    #printp('已获取到参与者数量为：'+str(len(list(LBALL))))
+    #print(GLCJH,NeedFollowOther)
+    notime=True
+    bar['value']=95
+    barval=95
+    barp.configure(text='95%')
+    getname_chongfu(LBALL2,zf=ZFidDict,pl=PLidDict)
+    barval=100
+    return True
+
+def getname_chongfu(usrdict,*,zf,pl):
+    #print(zf)
+    #print(pl)
+    printp('-------------------------------------------')
+    times=1
+    cfzfuid=[]
+    cfpluid=[]
+    if len(zf)!=0:
+        times=1
+        for i in zf:
+            if len(zf[i])>1:
+                cfzfuid.append(i)
+                printp('重复转发：'+usrdict[i]+'(UID:'+str(i)+') NO.'+str(times))
+                for j in range(len(zf[i])):
+                    #printp(str(j+1)+' 动态ID：'+str(zf[i][j]))
+                    printp(str(j+1)+' 链接：https://t.bilibili.com/'+str(zf[i][j]))
+                times+=1
+        if times==1:
+            printp('<未发现重复转发>')
+    if len(pl)!=0:
+        if times!=1:
+            printp('-------------------------------------------')
+        times=1
+        for i in pl:
+            if len(pl[i])>1:
+                cfpluid.append(i)
+                printp('重复评论：'+usrdict[i]+'(UID:'+str(i)+') NO.'+str(times))
+                for j in range(len(pl[i])):
+                    #printp(str(j+1)+' 评论ID：'+str(pl[i][j]))
+                    printp(str(j+1)+' 链接：https://t.bilibili.com/'+str(dyid)+'#reply'+str(pl[i][j]))
+                times+=1
+        if times==1:
+            printp('<未发现重复评论>')
+    printp('-------------------------------------------')
+    if LoginUID!='':
+        #print(LoginUID,cfzfuid,cfpluid)
+        if LoginUID in cfzfuid:
+            printp('注意：检测到当前已登录用户的重复转发！')
+        if LoginUID in cfpluid:
+            printp('注意：检测到当前已登录用户的重复评论！')
 
 def clicked2():
     #关于窗口
@@ -1597,7 +2045,7 @@ def clicked9():
     #print(output.get(1.0,END))
     TimeSt=time.strftime("%Y-%m-%d-%H-%M-%S",RaffleBeginTime)
     rzpath='抽奖记录'+TimeSt+'.txt'
-    RZtxt = open(rzpath,'w')
+    RZtxt = open(rzpath,'w',encoding='utf-8')
     RZtxt.write(output.get(1.0,tk.END))
     RZtxt.close()
     tkinter.messagebox.showinfo("提示",'抽奖记录已保存为：'+rzpath)
@@ -1906,6 +2354,7 @@ def clicked15():
         "Cookie":cookie,
         }
         r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header).text
+        r.encoding='utf-8'
         userinfo_dict=json.loads(r)
         #print(r)
         jdata=userinfo_dict['data']
@@ -1924,7 +2373,7 @@ def clicked15():
             pass
         tkinter.messagebox.showinfo("提示", '模拟登录失败，可能是cookie无效，已过期或未登录，请重新获取cookie!')
         return False
-    r=requests.get('https://api.bilibili.com/x/relation/followings/search?vmid=229778960&pn=1&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header).text
+    r=requests.get('http://api.bilibili.com/x/relation/followings/search?vmid=229778960&pn=1&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header).text
     jdata=json.loads(r)['data']
     total_num=jdata['total']
     mo2lbox.delete(0,tk.END)
@@ -1933,7 +2382,8 @@ def clicked15():
     global AttList
     AttList=[]
     while times<=pages:
-        r=requests.get('https://api.bilibili.com/x/relation/followings/search?vmid=229778960&pn='+str(times)+'&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header).text
+        r=requests.get('http://api.bilibili.com/x/relation/followings/search?vmid=229778960&pn='+str(times)+'&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header).text
+        r.encoding='utf-8'
         alist=jdata['list']
         for i in range(len(alist)):
             m=alist[i]['uname']+' (UID:'+str(alist[i]['mid'])+')'
@@ -2016,7 +2466,7 @@ def clicked16():
             header={
             "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
             }
-            url='https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?type=2&rid='+str(dyid)
+            url='http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?type=2&rid='+str(dyid)
             res = requests.get(url=url,headers=header)
             res.encoding='utf-8'
             resback=json.loads(res.text)
@@ -2029,7 +2479,7 @@ def clicked16():
             header={
             "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
             }
-            url='https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+str(dyid)
+            url='http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+str(dyid)
             res = requests.get(url=url,headers=header)
             res.encoding='utf-8'
             resback=json.loads(res.text)
@@ -2045,7 +2495,7 @@ def clicked16():
         mo3txt1.delete(0,tk.END)
         mo3txt1.insert(tk.END,dyinfoo['dynamic_id'])
         dyid=str(dyinfoo['dynamic_id'])
-    r=requests.get('https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+str(dyid)).text
+    r=requests.get('http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+str(dyid)).text
     jdata=json.loads(r)['data']
     dycard1=json.loads(jdata['card']['card'])
     dycard2=json.loads(jdata['card']['extend_json'])
@@ -2065,7 +2515,8 @@ def clicked16():
     global AtUserList
     AtUserList=[]
     for i in range(len(atlist)):
-        r=requests.get('https://api.bilibili.com/x/space/acc/info?mid='+str(atlist[i])).text
+        r=requests.get('http://api.bilibili.com/x/space/acc/info?mid='+str(atlist[i])).text
+        r.encoding='utf-8'
         atusrname=json.loads(r)['data']['name']
         m=atusrname+' (UID:'+str(atlist[i])+')'
         AtUserList.append(atlist[i])
@@ -2133,17 +2584,21 @@ def clicked17():
 
 class bvconv:
     def dec(x):
-        table='fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
-        tr={}
-        for i in range(58):
-                tr[table[i]]=i
-        s=[11,10,3,8,4,6]
-        xor=177451812
-        add=8728348608
-        r=0
-        for i in range(6):
-                r+=tr[x[s[i]]]*58**i
-        return (r-add)^xor
+        try:
+            table='fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
+            tr={}
+            for i in range(58):
+                    tr[table[i]]=i
+            s=[11,10,3,8,4,6]
+            xor=177451812
+            add=8728348608
+            r=0
+            for i in range(6):
+                    r+=tr[x[s[i]]]*58**i
+            return (r-add)^xor
+        except:
+            tkinter.messagebox.showwarning('提示','BV号转换出错！')
+            return 'Failed'
 
 def cookie_to_json(cookies_str):
     cookies_dict={}
@@ -2152,7 +2607,8 @@ def cookie_to_json(cookies_str):
     return cookies_dict
 
 def linktoaid(dyid):
-    #转换t.bilibili.com格式链接为动态id 备用正则/[0-9]{18}/
+    if dyid[-1]=='/':
+        dyid=dyid[:-1]
     if "www.bilibili.com/" in dyid and '#' in dyid:
         dyid, sep, tail = dyid.partition('#')
         dyid, sep, tail = dyid.partition('?')
@@ -2182,11 +2638,16 @@ def clicked17_2():
         anum=aid_in
     atype=anum[:2]
     aid=anum[2:]
+    if aid=='':
+        tkinter.messagebox.showwarning("提示", '输入的值有误！')
+        return False
     if atype=='av':
         sharetype='8'
     elif atype=='BV':
         sharetype='8'
         aid=bvconv.dec(anum)
+        if aid=='Failed':
+            return False
         anum='av'+str(aid)
     elif atype=='cv':
         sharetype='64'
@@ -2255,7 +2716,7 @@ def clicked17_2():
     'repost_code':'20000',
     'rid':aid,
     }
-    res = requests.post(url='https://api.vc.bilibili.com/dynamic_repost/v1/dynamic_repost/share',data=data,headers=header)
+    res = requests.post(url='http://api.vc.bilibili.com/dynamic_repost/v1/dynamic_repost/share',data=data,headers=header)
     #aidprint(res.text)
     message=json.loads(res.text)
     if (message['code'] == 0):
@@ -2265,17 +2726,17 @@ def clicked17_2():
         aidprint('>>动态分享失败，返回信息为：'+message['message'])
         return False
     aidprint('>>获取动态详情('+str(share_dynid)+')……')
-    r=requests.get('https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+str(share_dynid)).text
+    r=requests.get('http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id='+str(share_dynid)).text
     message=json.loads(r)
     if (message['code'] == 0):
         global adynid
         adynid=message['data']['card']['desc']['orig_dy_id_str']
-        if str(adynid)!='0':
+        if str(adynid)!='0' and str(adynid)!='':
             aidprint('>>稿件('+str(anum)+')对应动态获取成功\n>>>动态ID：'+str(adynid))
             aidlbl2.configure(text='动态ID：'+str(adynid))
             aidbtn2['state']=tk.NORMAL
         else:
-            aidprint('>>注意：稿件('+str(anum)+')对应动态ID为空值('+str(adynid)+')!')
+            aidprint('注意：稿件('+str(anum)+')对应动态ID为空值('+str(adynid)+')!')
     else:
         aidprint('>>获取失败，返回信息为：'+message['message'])
     aidprint('>>尝试删除刚才的动态('+str(share_dynid)+')……')
@@ -2284,7 +2745,7 @@ def clicked17_2():
     "csrf":csrf_token,
     'csrf_token':csrf_token,
     }
-    res = requests.post('https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/rm_dynamic?csrf='+csrf_token,data=data,headers=header)
+    res = requests.post('http://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/rm_dynamic?csrf='+csrf_token,data=data,headers=header)
     message=json.loads(res.text)
     if (message['code'] == 0):
         aidprint('>>动态删除成功')
@@ -2410,11 +2871,11 @@ chk4_state.set(False) # Set check state
 chk4 = ttk.Checkbutton(window, text="关注", var=chk4_state)
 chk4.bind_all('<F8>', lambda a:switch_to(chk4_state))
 chk4.place(x=270, y=92)'''
-btn4 = ttk.Button(window, text="更多选项", command=clicked11)
-btn4.bind_all('<F8>', lambda a:pressbutton(clicked11))
-btn4.place(x=230, y=90)
+btn6 = ttk.Button(window, text="更多选项", command=clicked11)
+btn6.bind_all('<F8>', lambda a:pressbutton(clicked11))
+btn6.place(x=230, y=90)
 spin = ttk.Spinbox(window, from_=1, to=999, width=5)
-spin.place(x=69, y=150)
+spin.place(x=69, y=145)
 spin.set(1)
 #spin.configure(bg='white')
 #lbl7 = tk.Label(window, text="值越小越严格,-1=无☞")
@@ -2422,10 +2883,10 @@ spin.set(1)
 #lbl7.configure(bg='white')
 #var2 = tk.StringVar(window)
 lbln1= tk.Label(window, text="0")
-lbln1.place(x=300, y=149)
+lbln1.place(x=300, y=144)
 lbln1.configure(bg='white')
 lbln2= tk.Label(window, text="-1")
-lbln2.place(x=300, y=187)
+lbln2.place(x=300, y=182)
 lbln2.configure(bg='white')
 nvar2 = tk.IntVar(window)
 spin3=Limiter(window,from_=0,to=6,length=53,command=lambda x:show_value(nvar2,lbln1),precision=4,variable=nvar2)
@@ -2433,14 +2894,14 @@ spin3=Limiter(window,from_=0,to=6,length=53,command=lambda x:show_value(nvar2,lb
 spin3['values']=(0,1,2,3,4,5,6)'''
 spin3.configure(style="TScale")
 #spin3.configure(bg='white',orient="horizontal")
-spin3.place(x=242, y=148)
+spin3.place(x=242, y=143)
 nvar = tk.IntVar(window)
 spin2=Limiter(window,from_=-1,to=10,length=83,command=lambda x:show_value(nvar,lbln2),precision=4,variable=nvar)
 '''spin2 = ttk.Combobox(window, width=4, textvariable=var)
 spin2['values']=(-1,0,1,2,3,4,5,6,7,8,9,10)'''
 spin2.configure(style="TScale")
 #spin2.configure(bg='white',orient="horizontal")
-spin2.place(x=212, y=186)
+spin2.place(x=212, y=182)
 spin2.set(-1)
 spin3.set(0)
 chk8_state = tk.BooleanVar()
@@ -2469,6 +2930,8 @@ chk6.place(x=10, y=240)'''
 btn4 = ttk.Button(window, text=" 保存当前记录 ", command=clicked9)
 btn4.bind_all('<F11>', lambda a:pressbutton2(btn4,clicked9))
 btn4.place(x=10, y=295)
+btn7 = ttk.Button(window, text="转发/评论查重", command=clicked18)
+btn7.place(x=112, y=295)
 btn2 = ttk.Button(window, text="关于本程序", command=clicked2)
 btn2.bind_all('<F1>', lambda a:pressbutton(clickedkeyhelp))
 btn2.place(x=228, y=221)
@@ -2484,16 +2947,16 @@ btn.bind_all('<F3>', lambda a:pressbutton(clicked))
 btn.place(x=10, y=340)
 btn.configure(bg='deepskyblue',height=2,width=42)
 lbl3 = tk.Label(window, text="获奖人数")
-lbl3.place(x=10, y=149)
+lbl3.place(x=10, y=144)
 lbl3.configure(bg='white')
 lbl4 = tk.Label(window, text="过滤抽奖号 [值越小越严格,-1=禁用]")
-lbl4.place(x=10, y=186)
+lbl4.place(x=10, y=182)
 lbl4.configure(bg='white')
-lbl5 = tk.Label(window, text="注: 评论获取不包括楼中楼")
+lbl5 = tk.Label(window, text="※评论获取不包括楼中楼")
 lbl5.place(x=10, y=115)
 lbl5.configure(bg='white')
 lbl6 = tk.Label(window, text="获奖者最低等级")
-lbl6.place(x=147, y=149)
+lbl6.place(x=147, y=144)
 lbl6.configure(bg='white')
 output = scrolledtext.ScrolledText(window, width=51, height=31, relief="solid")
 output.place(x=333, y=17)
