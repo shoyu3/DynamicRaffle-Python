@@ -1053,8 +1053,8 @@ def clicked0():
             except:
                 pass
             printp('模拟登录失败，可能是cookie无效，已过期或未登录，请重新获取cookie!')
-            return False
             print(str(repr(e)))
+            return False
     #dyid=input('输入动态ID：')
     #bar['value']=30
     BarProgress(30)
