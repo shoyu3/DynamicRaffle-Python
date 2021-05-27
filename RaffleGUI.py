@@ -27,8 +27,8 @@ except:
     pass
 #打包成exe所需的库
 
-version='1.3.1.022'
-updatetime='2021-05-11'
+version='1.3.2.023'
+updatetime='2021-05-27'
 
 class NullClass:
     def is_alive(N):
@@ -654,18 +654,18 @@ def get_same_follow(vmid):
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
     "Cookie":cookie,
     }
-    r=requests.get('http://api.bilibili.com/x/relation/same/followings?pn=1&vmid='+str(vmid),headers=header).text
+    r=requests.get('http://api.bilibili.com/x/relation/same/followings?pn=1&vmid='+str(vmid),headers=header)
     r.encoding='utf-8'
     try:
-        jdata=json.loads(r)['data']
+        jdata=json.loads(r.text)['data']
         total_num=jdata['total']
         pages=math.ceil(total_num/50)
         times=1
         while times<=pages:
-            r=requests.get('http://api.bilibili.com/x/relation/same/followings?pn='+str(times)+'&vmid='+str(vmid),headers=header).text
+            r=requests.get('http://api.bilibili.com/x/relation/same/followings?pn='+str(times)+'&vmid='+str(vmid),headers=header)
             r.encoding='utf-8'
             try:
-                jlist=json.loads(r)['data']['list']
+                jlist=json.loads(r.text)['data']['list']
                 for i in range(len(jlist)):
                     same_follow_list.append(jlist[i]['mid'])
             except:
@@ -1028,9 +1028,9 @@ def clicked0():
             "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
             "Cookie":cookie,
             }
-            r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header).text
+            r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header)
             r.encoding='utf-8'
-            userinfo_dict=json.loads(r)
+            userinfo_dict=json.loads(r.text)
             #print(r)
             jdata=userinfo_dict['data']
             myuid=jdata.get('mid')
@@ -1053,6 +1053,7 @@ def clicked0():
             except:
                 pass
             printp('模拟登录失败，可能是cookie无效，已过期或未登录，请重新获取cookie!')
+            return False
             print(str(repr(e)))
     #dyid=input('输入动态ID：')
     #bar['value']=30
@@ -1504,8 +1505,9 @@ def clicked18_2():
             "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
             "Cookie":cookie,
             }
-            r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header).text
-            userinfo_dict=json.loads(r)
+            r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header)
+            r.encoding='utf-8'
+            userinfo_dict=json.loads(r.text)
             #print(r)
             jdata=userinfo_dict['data']
             myuid=jdata.get('mid')
@@ -1733,9 +1735,9 @@ def getname_chongfu(usrdict,*,zf,pl):
     if LoginUID!='':
         #print(LoginUID,cfzfuid,cfpluid)
         if LoginUID in cfzfuid:
-            printp('注意：检测到当前已登录用户的重复转发！')
+            printp('注意：检测到当前已登录用户的重复转发！位于NO.'+str(cfzfuid.index(LoginUID)+1))
         if LoginUID in cfpluid:
-            printp('注意：检测到当前已登录用户的重复评论！')
+            printp('注意：检测到当前已登录用户的重复评论！位于NO.'+str(cfpluid.index(LoginUID)+1))
 
 def clicked2():
     #关于窗口
@@ -2353,9 +2355,9 @@ def clicked15():
         "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
         "Cookie":cookie,
         }
-        r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header).text
+        r=requests.get('http://api.bilibili.com/x/space/myinfo',headers=header)
         r.encoding='utf-8'
-        userinfo_dict=json.loads(r)
+        userinfo_dict=json.loads(r.text)
         #print(r)
         jdata=userinfo_dict['data']
         myuid=jdata.get('mid')
@@ -2364,7 +2366,8 @@ def clicked15():
         coins=jdata.get('coins')
         needexp=str(jdata['level_exp']['next_exp']-jdata['level_exp']['current_exp'])
         isLogin=True
-    except:
+    except Exception as e:
+        print(repr(e))
         try:
             if userinfo_dict['code']==-412:
                 tkinter.messagebox.showinfo("提示", '模拟登录失败，请求间隔过短，请过一段时间后重试!')
@@ -2373,8 +2376,9 @@ def clicked15():
             pass
         tkinter.messagebox.showinfo("提示", '模拟登录失败，可能是cookie无效，已过期或未登录，请重新获取cookie!')
         return False
-    r=requests.get('http://api.bilibili.com/x/relation/followings/search?vmid=229778960&pn=1&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header).text
-    jdata=json.loads(r)['data']
+    r=requests.get('http://api.bilibili.com/x/relation/followings/search?vmid=229778960&pn=1&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header)
+    r.encoding='utf-8'
+    jdata=json.loads(r.text)['data']
     total_num=jdata['total']
     mo2lbox.delete(0,tk.END)
     times=1
@@ -2382,8 +2386,9 @@ def clicked15():
     global AttList
     AttList=[]
     while times<=pages:
-        r=requests.get('http://api.bilibili.com/x/relation/followings/search?vmid=229778960&pn='+str(times)+'&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header).text
+        r=requests.get('http://api.bilibili.com/x/relation/followings/search?vmid=229778960&pn='+str(times)+'&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header)
         r.encoding='utf-8'
+        jdata=json.loads(r.text)['data']
         alist=jdata['list']
         for i in range(len(alist)):
             m=alist[i]['uname']+' (UID:'+str(alist[i]['mid'])+')'
@@ -2515,9 +2520,9 @@ def clicked16():
     global AtUserList
     AtUserList=[]
     for i in range(len(atlist)):
-        r=requests.get('http://api.bilibili.com/x/space/acc/info?mid='+str(atlist[i])).text
+        r=requests.get('http://api.bilibili.com/x/space/acc/info?mid='+str(atlist[i]))
         r.encoding='utf-8'
-        atusrname=json.loads(r)['data']['name']
+        atusrname=json.loads(r.text)['data']['name']
         m=atusrname+' (UID:'+str(atlist[i])+')'
         AtUserList.append(atlist[i])
         mo3lbox.insert(tk.END,m)
