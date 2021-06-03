@@ -27,8 +27,8 @@ except:
     pass
 #打包成exe所需的库
 
-version='1.3.2.023'
-updatetime='2021-05-27'
+version='1.3.3.024'
+updatetime='2021-06-03'
 
 class NullClass:
     def is_alive(N):
@@ -101,7 +101,7 @@ def chkupd():
     "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/88.0.4324.182 Safari/537.36",
     }
     try:
-        r=requests.get('http://api.github.com/repos/shoyu3/DynamicRaffle-Python/releases/latest',headers=header)
+        #r=requests.get('http://api.github.com/repos/shoyu3/DynamicRaffle-Python/releases/latest',headers=header)
         gitreturn=json.loads(r.text)
         gitversion=gitreturn['name']
         gitver=gitversion[gitversion.rfind('.'):]
@@ -192,7 +192,7 @@ def _get_offset(data_json):
 
 def getZF(dyn_id,*_Chong_Fu_):
     global RZOFF
-    global ZFidDict
+    global ZFidDict,ZFcontDict
     printp('正在获取完整转发列表……')
     RZOFF=True
     printp('Loading...')
@@ -218,12 +218,12 @@ def getZF(dyn_id,*_Chong_Fu_):
         return False
     total_num = data_json['data']['total']
     info['total'] = total_num
-
     # 获取全部数据
     uidall={}
     now_num = 0
     count = 0
     ZFidDict={}
+    ZFcontDict={}
     #users = []
     while now_num < total_num:  # 循环获取页面
         param = {'dynamic_id': dyn_id, 'offset': offset}
@@ -240,6 +240,15 @@ def getZF(dyn_id,*_Chong_Fu_):
                     zfdyid=data_json['data']['items'][i]['desc']['dynamic_id']
                     uname = data_json['data']['items'][i]['desc']['user_profile']['info']['uname']
                     uidall[uid]=uname
+                    #print(NeedIncludeKeyword[0],NeedIncludeKeyword)
+                    if NeedIncludeKeyword[0] and not _Chong_Fu_:
+                        #print(1)
+                        dyn_card=json.loads(data_json['data']['items'][i]['card'])
+                        #print(data_json['data']['items'][0])
+                        ZFcontDict[uid]=dyn_card['item']['content']
+                        '''for j in range(len(NeedIncludeKeyword[2])):
+                            if not NeedIncludeKeyword[2][j] in dyn_card['item']['content']:
+                                printp('[UID:'+str(uid)+' 未包含关键字中的第'+str(j+1)+'个，无效]')'''
                     if EnaSuoYin and not _Chong_Fu_:
                         ZFidDict[uid]=zfdyid
                     if _Chong_Fu_:
@@ -255,7 +264,8 @@ def getZF(dyn_id,*_Chong_Fu_):
                     percent='%.2f' % float(curusr/total_num*100)
                     BarProgress(40+15*float(curusr/total_num))
                     printp(str(percent)+'% ('+str(curusr)+'/'+str(total_num)+')')
-                except:
+                except Exception as e:
+                    print(repr(e))
                     pass
             else:  # 最后一页数量少于20时
                 break
@@ -308,10 +318,11 @@ def getPL(Dynamic_id,*_Chong_Fu_):
     link1 = 'http://api.bilibili.com/x/v2/reply?&jsonp=json&pn='
     link2 = '&type='+str(typnum)+'&oid='
     link3 = '&sort=2'#&_=1570498003332'
-    global PLidDict
+    global PLidDict,PLcontDict
     #comment_list = []
     userlist_1={}
     PLidDict={}
+    PLcontDict={}
     #pool = {}
     r = gethtml(link1 + str(current_page) + link2 + str(rid) + link3, header)
     json_data = json.loads(r)
@@ -358,6 +369,9 @@ def getPL(Dynamic_id,*_Chong_Fu_):
                 for reply in json_data1['data']['replies']:
                     userlist_1[int(reply['member']['mid'])]=reply['member']['uname']
                     PLidDict[int(reply['member']['mid'])]=reply['rpid']
+                    if NeedIncludeKeyword[1]:
+                        print(reply['content']['message'])
+                        PLcontDict[int(reply['member']['mid'])]=reply['content']['message']
                     outrb()
                     curusr=len(userlist_1)
                     percent='%.2f' % float(curusr/comments_num*100)
@@ -692,7 +706,7 @@ def checkSameFollow(mid):
                 for i in range(asterisknum):
                     asterisks=asterisks+'*'
                 mid=str(mid)[-10:][:1]+asterisks+str(mid)[-10:][-2:]
-            printp('[UID:'+str(mid)+' 未关注指定用户中的'+str(not_follow_list).replace('[','').replace(']','').replace("'",'').replace(" ",'')+'，无效]')
+            printp('[UID:'+str(mid)+' 未关注指定用户中的'+','.join(not_follow_list)+'，无效]')
             return False
         else:
             return True
@@ -729,6 +743,58 @@ def checkZBJ(mid):
             return True
     else:
         return True
+
+def checkZhuangBan(mid):
+    if NeedHaveGarb:
+        url='https://app.biliapi.net/x/v2/space/garb/list?pn=1&ps=200&vmid='+str(mid)
+        header={
+        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/75.0.4324.182 Safari/537.36",
+        }
+        res = requests.get(url=url,headers=header)
+        res.encoding='utf-8'
+        resback=json.loads(res.text)
+        usrinfo=resback.get('data')
+        try:
+            usrfanscount=usrinfo['count']
+        except:
+            print(res.text)
+            printp('获取UID:'+str(mid)+'的装扮信息出错，请自行查看!')
+            return True
+        if usrfanscount==0:
+            if noDisplayUser1:
+                asterisknum=len(str(mid))-3
+                asterisks=''
+                for i in range(asterisknum):
+                    asterisks=asterisks+'*'
+                mid=str(mid)[-10:][:1]+asterisks+str(mid)[-10:][-2:]
+            printp('[UID:'+str(mid)+' 未拥有任何粉丝套装('+str(usrfanscount)+')，无效]')
+            return False
+        else:
+            return True
+    else:
+        return True
+
+def checkKW_1(mid):
+    if not NeedIncludeKeyword[0]:
+        return True
+    if len(NeedIncludeKeyword[2])==0:
+        return True
+    for j in range(len(NeedIncludeKeyword[2])):
+        if not NeedIncludeKeyword[2][j] in ZFcontDict[mid]:
+            printp('[UID:'+str(mid)+' 转发未包含关键字中的第'+str(j+1)+'个，无效]')
+            return False
+    return True
+
+def checkKW_2(mid):
+    if not NeedIncludeKeyword[1]:
+        return True
+    if len(NeedIncludeKeyword[2])==0:
+        return True
+    for j in range(len(NeedIncludeKeyword[2])):
+        if not NeedIncludeKeyword[2][j] in PLcontDict[mid]:
+            printp('[UID:'+str(mid)+' 评论未包含关键字中的第'+str(j+1)+'个，无效]')
+            return False
+    return True
 
 def linktodyid(dyid):
     #转换t.bilibili.com格式链接为动态id 备用正则/[0-9]{18}/
@@ -1262,13 +1328,17 @@ def clicked0():
     times=1
     lba=len(LBALL)
     BarProgress(85)
+    #恶作剧代码，应UID:291224482的要求 https://b23.tv/CUkmf3
+    for i in BLACKLIST:
+        LBALL.remove(i)
+    #======================================================#
     while True:
         while True:
             if not len(LBALL) < HJNUM:
                 HJuser=secrets.choice(list(LBALL))#这句是核心功能之一，随机从参与者数组里抽一位
                 #print(HJuser)
                 if not HJuser in HJMD:
-                    if checkGZ(HJuser) and checklvl(HJuser,HJlvl) and checkCJH(HJuser,CJHnum) and checkZBJ(HJuser) and checkSameFollow(HJuser):
+                    if checkGZ(HJuser) and checklvl(HJuser,HJlvl) and checkCJH(HJuser,CJHnum) and checkZBJ(HJuser) and checkZhuangBan(HJuser) and checkSameFollow(HJuser) and checkKW_1(HJuser) and checkKW_2(HJuser):
                         HJMD.append(HJuser)
                         #LBALL.remove(HJuser)
                         #printp('[抽到UID:'+str(HJuser)+']')
@@ -1313,12 +1383,12 @@ def clicked0():
     barval=100
     if NEEDAT:
         #print(ATuser)
-        ATmsg0=str(ATuser).replace('[','')
+        '''ATmsg0=str(ATuser).replace('[','')
         ATmsg1=ATmsg0.replace(']','')
         ATmsg2=ATmsg1.replace(',',' ')
-        ATmsg3=ATmsg2.replace("'",'')
+        ATmsg3=ATmsg2.replace("'",'')'''
         #print(ATmsg3)
-        ATmsg=ATmsg3
+        ATmsg=' '.join(ATuser)
         pyperclip.copy(ATmsg)
         printp('已复制获奖者用户名，可直接粘贴到动态编辑框')
     if pform=='win':
@@ -1441,7 +1511,7 @@ def clicked18_2():
             resback=json.loads(res.text)
             dyinfo=resback['data']['card']
         except Exception as e:
-            #print(e)
+            #print(repr(e))
             tkinter.messagebox.showwarning("提示", '输入的动态ID长度不够 ('+str(len(str(dyid)))+'/'+'18) ！')
             return False
     elif len(str(dyid))>18:
@@ -1743,13 +1813,14 @@ def clicked2():
     #关于窗口
     tkinter.messagebox.showinfo("关于", '''B站动态抽奖工具 Python GUI版 '''+version+'''
 更新日期: '''+updatetime+'''
-By: 芍芋
-Blog: https://shoyu.top
-Bili.fan: https://bili.fan
+作者: 派蒙月饼（芍芋）
+Bili.fan首页: https://bili.fan
+Blog: https://bili.fan/blog/
 哔哩哔哩: https://space.bilibili.com/229778960
 爱发电: https://afdian.net/@shoyu
 本项目Github：https://github.com/shoyu3/DynamicRaffle-Python
 Copyright © 2021 Bili.fan 本项目以 GPL v3 开源''')
+#https://shoyu.top
 
 def clicked3():
     global login1window
@@ -2064,6 +2135,8 @@ def mo_switch_onoff(name,*ele):
     global NeedFollowSelf
     global NeedFollowOther
     global NeedHaveLiveRoom
+    global NeedHaveGarb
+    global NeedIncludeKeyword
     if name=='mochk1':
         NeedFollowSelf=not NeedFollowSelf
     elif name=='mochk2':
@@ -2072,6 +2145,12 @@ def mo_switch_onoff(name,*ele):
         switch_disnorm(ele)
     elif name=='mochk3':
         NeedHaveLiveRoom=not NeedHaveLiveRoom
+    elif name=='mochk4':
+        NeedHaveGarb=not NeedHaveGarb
+    elif name=='mochk5':
+        NeedIncludeKeyword[0]=not NeedIncludeKeyword[0]
+    elif name=='mochk6':
+        NeedIncludeKeyword[1]=not NeedIncludeKeyword[1]
     more1window.update()
 
 def switch_disnorm(ele):
@@ -2156,7 +2235,7 @@ def clicked12():
             if not relation==2 and not relation==6:
                 wgzlist.append(gzlist[i])
     if not len(wgzlist)==0:
-        tkinter.messagebox.showwarning("提示", '保存失败，还有以下用户您并未关注：\n'+str(wgzlist).replace('[','').replace(']','').replace("'",'').replace(" ",''))
+        tkinter.messagebox.showwarning("提示", '保存失败，还有以下用户您并未关注：\n'+','.join(wgzlist))
     else:
         tkinter.messagebox.showinfo("提示", '保存成功，您已关注所有指定用户！')
         while '' in gzlist:
@@ -2167,20 +2246,22 @@ def clicked12():
 NeedFollowSelf=False
 NeedFollowOther=False
 NeedHaveLiveRoom=False
+NeedHaveGarb=False
 NeedFollowOtherList=[]
+NeedIncludeKeyword=[True,False,[]]
 def clicked11():
     if cjthread.is_alive():
         tkinter.messagebox.showwarning("提示", '请等待抽奖结束后再进行调整！')
         return False
     global more1window
-    global motxt1
+    global motxt1,motxt2
     global mochk1_state
     more1window = tk.Toplevel(window)
     more1window.title('更多选项')
     more1window.configure(bg='white')
     more1window.transient(window) 
     width = 308
-    heigh = 155
+    heigh = 240
     screenwidth = more1window.winfo_screenwidth()
     screenheight = more1window.winfo_screenheight()-50
     more1window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
@@ -2199,11 +2280,15 @@ def clicked11():
     mochk3_state = tk.BooleanVar()
     mochk3_state.set(NeedHaveLiveRoom)
     mochk3 = ttk.Checkbutton(more1window, text="需要拥有直播间", var=mochk3_state ,command=lambda:mo_switch_onoff('mochk3'))
-    mochk3.place(x=179, y=10)
+    mochk3.place(x=176, y=10)
     mochk2_state = tk.BooleanVar()
     mochk2_state.set(NeedFollowOther)
     mochk2 = ttk.Checkbutton(more1window, text="需要关注其他用户", var=mochk2_state,command=lambda:mo_switch_onoff('mochk2',motxt1))
     mochk2.place(x=10, y=40)
+    mochk4_state = tk.BooleanVar()
+    mochk4_state.set(NeedHaveGarb)
+    mochk4 = ttk.Checkbutton(more1window, text="需要拥有粉丝套装", var=mochk4_state ,command=lambda:mo_switch_onoff('mochk4'))
+    mochk4.place(x=176, y=40)
     molbl1 = tk.Label(more1window, text="需一并关注的UID (使用半角逗号,隔开 需要自己也关注)")
     molbl1.place(x=4, y=65)
     molbl1.configure(bg='white')
@@ -2212,77 +2297,114 @@ def clicked11():
     nfol=NeedFollowOtherList
     while '' in nfol:
         nfol.remove('')
-    motxt1.insert(tk.END,str(nfol).replace('[','').replace(']','').replace("'",'').replace(" ",''))
+    motxt1.insert(tk.END,','.join(nfol))
     if not NeedFollowOther:
         motxt1['state']='disabled'
     #print(NeedFollowOtherList)
     if NeedFollowOther and NeedFollowOtherList==[]:
         mochk2_state.set(False)
         motxt1['state']='disabled'
-
     mobtn2 = ttk.Button(more1window, text="搜索关注列表", command=clicked13)
     mobtn2.place(x=10, y=112)
     mobtn3 = ttk.Button(more1window, text="读取动态at", command=clicked14)
     mobtn3.place(x=100, y=112)
     mobtn1 = ttk.Button(more1window, text="保存并检测", command=clicked12)
     mobtn1.place(x=211, y=112)
+    molbl2 = tk.Label(more1window, text="需包含的文字 (使用半角逗号,隔开 无需启用索引功能)")
+    molbl2.place(x=8, y=143)
+    molbl2.configure(bg='white')
+    motxt2 = ttk.Entry(more1window, width=40)
+    motxt2.place(x=11, y=166)
+    nikw=NeedIncludeKeyword[2]
+    while '' in nikw:
+        nikw.remove('')
+    motxt2.insert(tk.END,','.join(nikw))
+    mobtn4 = ttk.Button(more1window, text="搜索可用tag", command=clicked_002)
+    mobtn4.place(x=10, y=192)
+    mobtn4['state']=tk.DISABLED
+    mochk5_state = tk.BooleanVar()
+    mochk5_state.set(NeedIncludeKeyword[0])
+    mochk5 = ttk.Checkbutton(more1window, text="转发", var=mochk5_state ,command=lambda:mo_switch_onoff('mochk5'))
+    mochk5.place(x=103, y=194)
+    mochk6_state = tk.BooleanVar()
+    mochk6_state.set(NeedIncludeKeyword[1])
+    mochk6 = ttk.Checkbutton(more1window, text="评论", var=mochk6_state ,command=lambda:mo_switch_onoff('mochk6'))
+    mochk6.place(x=159, y=194)
+    #mobtn3 = ttk.Button(more1window, text="读取动态at", command=clicked14)
+    #mobtn3.place(x=100, y=112)
+    mobtn5 = ttk.Button(more1window, text="保存", command=clicked_001)
+    mobtn5.place(x=211, y=192)
     more1window.lift()
     more1window.grab_set()
     more1window.mainloop()
 
-'''def clicked11_old():
-    global more1window
-    global motxt1
-    global mochk1_state
-    more1window = tk.Toplevel(window)
-    more1window.title('更多选项')
-    more1window.configure(bg='white')
-    more1window.transient(window) 
-    width = 308
-    heigh = 155
-    screenwidth = more1window.winfo_screenwidth()
-    screenheight = more1window.winfo_screenheight()-50
-    more1window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
-    more1window.resizable(0,0)
+def clicked_002():
+    tkinter.messagebox.showinfo('提示','无意义功能，暂未完成！')
+    return False
+    global more4window
+    global mo4txt1
+    global mo4lbox
+    global mo4lbl2
+    more4window = tk.Toplevel(window)
+    more4window.title('搜索可用tag')
+    more4window.configure(bg='white')
+    more4window.transient(window) 
+    width = 292
+    heigh = 230
+    screenwidth = more4window.winfo_screenwidth()
+    screenheight = more4window.winfo_screenheight()-50
+    more4window.geometry('%dx%d+%d+%d'%(width, heigh, (screenwidth-width)/2, (screenheight-heigh)/2))
+    more4window.resizable(0,0)
     try:
-        more1window.iconbitmap('icon.ico')
+        more4window.iconbitmap('icon.ico')
     except:
         try:
-            setIcon(more1window)
+            setIcon(more4window)
         except:
             pass
-    mochk1_state = tk.BooleanVar()
-    mochk1_state.set(NeedFollowSelf)
-    mochk1 = ttk.Checkbutton(more1window, text="需要关注自己", var=mochk1_state ,command=lambda:mo_switch_onoff('mochk1'))
-    mochk1.place(x=10, y=10)
-    mochk2_state = tk.BooleanVar()
-    mochk2_state.set(NeedFollowOther)
-    mochk2 = ttk.Checkbutton(more1window, text="需要关注其他用户", var=mochk2_state,command=lambda:mo_switch_onoff('mochk2',motxt1))
-    mochk2.place(x=10, y=40)
-    molbl1 = tk.Label(more1window, text="需一并关注的UID (使用,隔开 需要自己也关注)")
-    molbl1.place(x=7, y=65)
-    molbl1.configure(bg='white')
-    motxt1 = ttk.Entry(more1window, width=40)
-    motxt1.place(x=10, y=86)
-    nfol=NeedFollowOtherList
-    while '' in nfol:
-        nfol.remove('')
-    motxt1.insert(tk.END,str(nfol).replace('[','').replace(']','').replace("'",'').replace(" ",''))
-    if not NeedFollowOther:
-        motxt1['state']='disabled'
-    #print(NeedFollowOtherList)
-    if NeedFollowOther and NeedFollowOtherList==[]:
-        mochk2_state.set(False)
-        motxt1['state']='disabled'
-    mobtn2 = ttk.Button(more1window, text="搜索关注列表", command=clicked13)
-    mobtn2.place(x=10, y=112)
-    mobtn3 = ttk.Button(more1window, text="读取动态at", command=clicked14)
-    mobtn3.place(x=100, y=112)
-    mobtn1 = ttk.Button(more1window, text="保存并检测", command=clicked12)
-    mobtn1.place(x=210, y=112)
-    more1window.lift()
-    more1window.grab_set()
-    more1window.mainloop()'''
+    mo4lbl1 = tk.Label(more4window, text="输入关键字")
+    mo4lbl1.place(x=10, y=0)
+    mo4lbl1.configure(bg='white')
+    mo4lbl2 = tk.Label(more4window, text="")
+    mo4lbl2.place(x=10, y=196)
+    mo4lbl2.configure(bg='white')
+    mo4txt1 = ttk.Entry(more4window, width=25)
+    mo4txt1.place(x=10, y=20)
+    mo4btn1 = ttk.Button(more4window, text="搜索", command=clicked_003)
+    mo4btn1.place(x=193, y=18)
+    mo4lbox = tk.Listbox(more4window,relief='solid',width=38,height=8)
+    mo4lbox.place(x=10, y=45)
+    mo4btn2 = ttk.Button(more4window, text="插入", command=clicked_003_2)
+    mo4btn2.place(x=193, y=194)
+    more4window.lift()
+    more4window.grab_set()
+    more4window.mainloop()
+
+def clicked_001():
+    global NeedIncludeKeyword
+    kwlist=motxt2.get()
+    #print(gzlist)
+    if kwlist=='':
+        tkinter.messagebox.showinfo("提示", '保存成功！关键字数量：0')
+        NeedIncludeKeyword[2]=[]
+        #tkinter.messagebox.showwarning("提示", '您未输入任何内容！')
+        return False
+    kwlist=kwlist.split(',')
+    #wkwlist=[]
+    if not all(v for v in kwlist):
+        tkinter.messagebox.showwarning("提示", '存在多余或无意义逗号分隔！')
+        return False
+    tkinter.messagebox.showinfo("提示", '保存成功！关键字数量：'+str(len(kwlist)))
+    while '' in kwlist:
+        kwlist.remove('')
+    #print(kwlist)
+    NeedIncludeKeyword[2]=list(set(kwlist))
+
+def clicked_003():
+    pass
+
+def clicked_003_2():
+    pass
 
 def clicked13():
     global more2window
@@ -2490,7 +2612,7 @@ def clicked16():
             resback=json.loads(res.text)
             dyinfo=resback['data']['card']
         except Exception as e:
-            print(e)
+            print(str(repr(e)))
             tkinter.messagebox.showwarning("提示", '输入的动态ID长度不够 ('+str(len(str(dyid)))+'/'+'18) ！')
             return False
     elif len(str(dyid))>18:
@@ -2774,7 +2896,7 @@ def aidprint(text):
     aid1window.update()
 
 window = tk.Tk()#初始化一个窗口
-window.title('B站动态抽奖工具 Python GUI版 '+version+' 演示视频av247587107 按下F1可查看按键操作说明')#标题 By: 芍芋 '+updatetime+' 
+window.title('B站动态抽奖工具 Python GUI版 '+version+' 演示视频av247587107 如遇问题请联系作者')#按下F1可查看按键操作说明')#标题 By: 芍芋 '+updatetime+' 
 window.configure(bg='white')#背景颜色
 #window.geometry("820x300")
 
@@ -2845,7 +2967,7 @@ class Limiter(ttk.Scale):
         self.chain(newvalue) 
 
 #定义文本
-lbl1 = tk.Label(window, text="在下方输入动态链接或者动态ID (使用Ctrl+V粘贴)")
+lbl1 = tk.Label(window, text="在下方输入动态链接或者动态ID")# (使用Ctrl+V粘贴)")
 lbl1.place(x=10, y=10)
 lbl1.configure(bg='white')
 txt = ttk.Entry(window, width=43)
@@ -2978,6 +3100,121 @@ btn4.state(['disabled'])
 if not pform=='win':
     tkinter.messagebox.showinfo("提示", '非Windows平台需手动调整窗口大小使内容显示完整！')
 
+show = tk.StringVar()
+class section:
+    def onPaste(self):
+        try:
+            sel_index=a,b=txt.index('sel.first'),txt.index('sel.last')
+            #print(sel_index)
+            txt_str=txt.get()
+            new_str=''
+            for i in range(0, len(txt_str)):
+                if i not in range(sel_index[0],sel_index[1]):
+                    new_str = new_str + txt_str[i]
+            txt.delete(0,tk.END)
+            txt.insert(0,new_str)
+        except:
+            sel_index=(txt.index('insert'),tk.END)
+        t=pyperclip.paste()
+        txt.insert(txt.index(sel_index[0]),t)
+        txt.icursor(sel_index[0]+len(t))
+            #show.set(str(self.text))
+ 
+    def onCopy(self):
+        sel_index=a,b=txt.index('sel.first'),txt.index('sel.last')
+        self.text = txt.get()[sel_index[0]:sel_index[1]]
+        pyperclip.copy(self.text)
+ 
+    def onCut(self):
+        self.onCopy()
+        try:
+            txt.delete('sel.first', 'sel.last')
+        except:
+            pass
+
+    def onSelectAll(self):
+        txt.select_range('0',tk.END)
+
+BLACKLIST=[]
+def clicked_surprise():
+    global BLACKLIST
+    BLACKLIST.append(291224482)
+    menu.delete('点我有惊喜！')
+
+section = section()
+menu = tk.Menu(window, tearoff=0)
+menu.add_command(label="粘贴", command=section.onPaste)
+menu.add_command(label="剪切", command=section.onCut)
+menu.add_command(label="复制", command=section.onCopy)
+menu.add_separator()
+menu.add_command(label="全选", command=section.onSelectAll)
+menu.add_command(label="点我有惊喜！", command=clicked_surprise)
+
+def popupmenu(event):
+    if pyperclip.paste()=='':
+        menu.entryconfig('粘贴',state=tk.DISABLED)
+    else:
+        menu.entryconfig('粘贴',state=tk.NORMAL)
+    if txt.select_present()==0:
+        menu.entryconfig('剪切',state=tk.DISABLED)
+        menu.entryconfig('复制',state=tk.DISABLED)
+    else:
+        menu.entryconfig('剪切',state=tk.NORMAL)
+        menu.entryconfig('复制',state=tk.NORMAL)
+    menu.post(event.x_root, event.y_root)
+
+txt.bind("<Button-3>", popupmenu)
+show2 = tk.StringVar()
+class section2:
+    '''def onPaste(self):
+        try:
+            sel_index=a,b=output.index('sel.first'),output.index('sel.last')
+            #print(sel_index)
+            output_str=output.get()
+            new_str=''
+            for i in range(0, len(output_str)):
+                if i not in range(sel_index[0],sel_index[1]):
+                    new_str = new_str + output_str[i]
+            output.delete(0,tk.END)
+            output.insert(0,new_str)
+        except:
+            sel_index=(output.index('insert'),tk.END)
+        t=pyperclip.paste()
+        output.insert(output.index(sel_index[0]),t)
+        output.icursor(sel_index[0]+len(t))
+            #show.set(str(self.text))'''
+ 
+    def onCopy(self):
+        sel_index=a,b=output.index('sel.first'),output.index('sel.last')
+        self.text = output.get(sel_index[0],sel_index[1])#[]
+        pyperclip.copy(self.text)
+ 
+    '''def onCut(self):
+        self.onCopy()
+        try:
+            output.delete('sel.first', 'sel.last')
+        except:
+            pass'''
+
+    def onSelectAll(self):
+        output.selection_range('0',tk.END)
+
+section2 = section2()
+menu2 = tk.Menu(window, tearoff=0)
+menu2.add_command(label="复制", command=section2.onCopy)
+#menu2.add_separator()
+#menu2.add_command(label="全选", command=section2.onSelectAll)
+
+def popupmenu2(event):
+    try:
+        output.selection_get()
+        #print(output.selection_get())
+        menu2.entryconfig('复制',state=tk.NORMAL)
+    except:
+        menu2.entryconfig('复制',state=tk.DISABLED)
+    menu2.post(event.x_root, event.y_root)
+
+output.bind("<Button-3>", popupmenu2)
 DisplayLogInfo=True
 chkupdwindow = tk.Toplevel(window)
 chkupdwindow.title('检查更新')
