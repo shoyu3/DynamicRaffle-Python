@@ -27,8 +27,8 @@ except:
     pass
 #打包成exe所需的库
 
-version='1.3.3.024'
-updatetime='2021-06-03'
+version='1.3.4.025'
+updatetime='2021-06-10'
 
 class NullClass:
     def is_alive(N):
@@ -1812,11 +1812,11 @@ def getname_chongfu(usrdict,*,zf,pl):
 def clicked2():
     #关于窗口
     tkinter.messagebox.showinfo("关于", '''B站动态抽奖工具 Python GUI版 '''+version+'''
-更新日期: '''+updatetime+'''
-作者: 派蒙月饼（芍芋）
+更新日期: '''+updatetime+'''（永久停更）
+作者: 羽球节（派蒙月饼、芍芋）
 Bili.fan首页: https://bili.fan
 Blog: https://bili.fan/blog/
-哔哩哔哩: https://space.bilibili.com/229778960
+哔哩哔哩: https://space.bilibili.com/526467823
 爱发电: https://afdian.net/@shoyu
 本项目Github：https://github.com/shoyu3/DynamicRaffle-Python
 Copyright © 2021 Bili.fan 本项目以 GPL v3 开源''')
@@ -2498,7 +2498,7 @@ def clicked15():
             pass
         tkinter.messagebox.showinfo("提示", '模拟登录失败，可能是cookie无效，已过期或未登录，请重新获取cookie!')
         return False
-    r=requests.get('http://api.bilibili.com/x/relation/followings/search?vmid=229778960&pn=1&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header)
+    r=requests.get('http://api.bilibili.com/x/relation/followings/search?vmid='+str(myuid)+'&pn=1&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header)
     r.encoding='utf-8'
     jdata=json.loads(r.text)['data']
     total_num=jdata['total']
@@ -2508,7 +2508,7 @@ def clicked15():
     global AttList
     AttList=[]
     while times<=pages:
-        r=requests.get('http://api.bilibili.com/x/relation/followings/search?vmid=229778960&pn='+str(times)+'&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header)
+        r=requests.get('http://api.bilibili.com/x/relation/followings/search?vmid='+str(myuid)+'&pn='+str(times)+'&ps=50&order=desc&order_type=attention&name='+str(mo2txt1.get()),headers=header)
         r.encoding='utf-8'
         jdata=json.loads(r.text)['data']
         alist=jdata['list']
