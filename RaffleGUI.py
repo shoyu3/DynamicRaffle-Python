@@ -1329,8 +1329,10 @@ def clicked0():
     lba=len(LBALL)
     BarProgress(85)
     #恶作剧代码，应UID:291224482的要求 https://b23.tv/CUkmf3
-    for i in BLACKLIST:
-        LBALL.remove(i)
+    try:
+        for i in BLACKLIST:
+            LBALL.remove(i)
+    except:pass
     #======================================================#
     while True:
         while True:
